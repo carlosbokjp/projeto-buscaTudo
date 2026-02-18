@@ -42,6 +42,7 @@ h1 + p {
     margin-bottom: 25px;
     border-bottom: 2px solid #e5e7eb;
     padding-bottom: 5px;
+    flex-wrap: wrap;
 }
 
 .tab-button {
@@ -77,15 +78,21 @@ h1 + p {
     border-radius: 3px 3px 0 0;
 }
 
+/* ===== SISTEMA DE ABAS CORRIGIDO ===== */
 .tab-content {
     display: none;
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .tab-content.active {
-    display: block;
-    opacity: 1;
+    display: block !important;
+}
+
+/* Garantir visibilidade de todas as abas quando ativas */
+#abaNcm.active,
+#abaCnpj.active,
+#abaImportar.active,
+#abaXml.active {
+    display: block !important;
 }
 
 /* Estilos da Busca */
@@ -140,7 +147,10 @@ h1 + p {
 }
 
 /* Status */
-#statusNcm, #statusCnpj {
+#statusNcm, 
+#statusCnpj,
+#statusImportacao,
+#statusXml {
     margin: 15px 0;
     padding: 10px;
     border-radius: 8px;
@@ -238,23 +248,38 @@ mark {
     padding-right: 15px;
 }
 
-/* Scrollbar personalizada para a área de CNPJ */
-.cnpj-info::-webkit-scrollbar {
+/* Scrollbar personalizada */
+.cnpj-info::-webkit-scrollbar,
+#tabelaResultados::-webkit-scrollbar,
+#tabelaProdutosXml::-webkit-scrollbar {
     width: 8px;
 }
 
-.cnpj-info::-webkit-scrollbar-track {
+.cnpj-info::-webkit-scrollbar-track,
+#tabelaResultados::-webkit-scrollbar-track,
+#tabelaProdutosXml::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 10px;
 }
 
-.cnpj-info::-webkit-scrollbar-thumb {
+.cnpj-info::-webkit-scrollbar-thumb,
+#tabelaResultados::-webkit-scrollbar-thumb {
     background: #2563eb;
     border-radius: 10px;
 }
 
-.cnpj-info::-webkit-scrollbar-thumb:hover {
+#tabelaProdutosXml::-webkit-scrollbar-thumb {
+    background: #f59e0b;
+    border-radius: 10px;
+}
+
+.cnpj-info::-webkit-scrollbar-thumb:hover,
+#tabelaResultados::-webkit-scrollbar-thumb:hover {
     background: #1d4ed8;
+}
+
+#tabelaProdutosXml::-webkit-scrollbar-thumb:hover {
+    background: #d97706;
 }
 
 .cnpj-section {
@@ -283,6 +308,14 @@ mark {
     font-size: 1rem;
 }
 
+.cnpj-section h4::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, #2563eb, transparent);
+    margin-left: 10px;
+}
+
 .cnpj-section p {
     margin: 8px 0;
     line-height: 1.5;
@@ -293,6 +326,12 @@ mark {
     color: #1e293b;
     min-width: 120px;
     display: inline-block;
+}
+
+.cnpj-section p strong {
+    background: #f0f4ff;
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .socio-item {
@@ -318,70 +357,137 @@ mark {
     color: #2563eb;
 }
 
-/* Mensagens de status */
-#statusCnpj {
-    margin: 15px 0;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
 /* Classe utilitária */
 .hidden {
     display: none !important;
 }
 
-/* Responsividade */
-@media (max-width: 768px) {
-    .app-container {
-        padding: 20px;
-    }
+/* ===== ESTILOS PARA IMPORTAÇÃO CSV ===== */
+#csvFileInput {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+}
 
-    h1 {
-        font-size: 1.5rem;
-    }
+#csvFileInput:hover {
+    border-color: #2563eb;
+}
 
-    .search-box {
-        flex-direction: column;
-    }
+#btnImportarCSV {
+    background: #8b5cf6;
+}
 
-    .search-box input {
-        min-width: 100%;
-    }
+#btnImportarCSV:hover {
+    background: #7c3aed;
+}
 
-    .search-box button {
-        width: 100%;
-    }
+/* ===== ESTILOS PARA XML NFE ===== */
+#xmlFileInput {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+}
 
-    .tabs {
-        flex-direction: column;
-        gap: 5px;
-    }
+#xmlFileInput:hover {
+    border-color: #f59e0b;
+}
 
-    .tab-button {
-        width: 100%;
-        text-align: center;
-    }
+#btnProcessarXml {
+    padding: 12px 24px;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
 
-    .tab-button.active::after {
-        display: none;
-    }
+#btnProcessarXml:hover {
+    background: #d97706;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
+}
 
-    .tab-button.active {
-        background: #2563eb;
-        color: white;
-        border-radius: 8px;
-    }
+/* ===== TABELAS ===== */
+#tabelaResultados,
+#tabelaProdutosXml {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-top: 15px;
+}
 
-    .card p strong {
-        min-width: 80px;
-    }
-    
-    .cnpj-section strong {
-        min-width: 100px;
-    }
+#tabelaResultados table,
+#tabelaProdutosXml table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#tabelaResultados th,
+#tabelaProdutosXml th {
+    position: sticky;
+    top: 0;
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    z-index: 10;
+}
+
+#tabelaProdutosXml th {
+    background: #f59e0b;
+}
+
+#tabelaResultados td,
+#tabelaProdutosXml td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#tabelaResultados tr:hover,
+#tabelaProdutosXml tr:hover {
+    background: #f0f4ff;
+}
+
+#tabelaResultados tr[style*="background-color: #fff0f0"]:hover {
+    background-color: #ffe0e0 !important;
+}
+
+/* Botão de exportar */
+.btn-exportar {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-exportar:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
 }
 
 /* Animações */
@@ -396,7 +502,8 @@ mark {
     }
 }
 
-.resultado-item, .cnpj-section {
+.resultado-item, 
+.cnpj-section {
     animation: fadeIn 0.3s ease;
 }
 
@@ -426,235 +533,67 @@ mark {
     100% { transform: rotate(360deg); }
 }
 
-/* Melhorias visuais para os cards */
-.cnpj-section h4::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, #2563eb, transparent);
-    margin-left: 10px;
-}
-
-/* Destaque para informações importantes */
-.cnpj-section p strong {
-    background: #f0f4ff;
-    padding: 2px 6px;
-    border-radius: 4px;
-}
-
-/* Efeito de hover nos botões das abas no mobile */
+/* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
+    .app-container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .tabs {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .tab-button {
+        width: 100%;
+        text-align: center;
+        border-radius: 8px;
+    }
+
+    .tab-button.active::after {
+        display: none;
+    }
+
     .tab-button.active {
         background: #2563eb;
         color: white;
     }
-    
-    .tab-button:not(.active):hover {
-        background: #f0f4ff;
-    }
-}
-/* FORÇAR VISIBILIDADE DAS ABAS */
-#abaNcm.active,
-#abaCnpj.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
 
-/* Garantir que a busca CNPJ apareça */
-#abaCnpj .search-box {
-    display: flex !important;
-}
-
-#cnpjInput, 
-#btnBuscarCnpj {
-    display: inline-block !important;
-}
-/* ===== GARANTIR VISIBILIDADE DA ABA CNPJ ===== */
-#abaCnpj.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-#abaCnpj .search-box {
-    display: flex !important;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-#cnpjInput {
-    flex: 1;
-    min-width: 250px;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-#btnBuscarCnpj {
-    padding: 12px 24px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-#btnBuscarCnpj:hover {
-    background: #1d4ed8;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(37,99,235,0.3);
-}
-
-#statusCnpj {
-    margin: 15px 0;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-align: center;
-    background: #f3f4f6;
-}
-
-#resultadoCnpj {
-    margin-top: 20px;
-}
-
-/* Ajuste para mobile */
-@media (max-width: 768px) {
-    #abaCnpj .search-box {
+    .search-box {
         flex-direction: column;
     }
-    
-    #cnpjInput {
+
+    .search-box input,
+    .search-box button,
+    #csvFileInput,
+    #xmlFileInput {
+        width: 100%;
         min-width: 100%;
     }
-    
-    #btnBuscarCnpj {
-        width: 100%;
+
+    .card p strong {
+        min-width: 80px;
     }
-}
-/* Estilos para a tabela de importação */
-#tabelaResultados {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-}
+    
+    .cnpj-section strong {
+        min-width: 100px;
+    }
 
-#tabelaResultados table {
-    width: 100%;
-    border-collapse: collapse;
-}
+    #tabelaResultados,
+    #tabelaProdutosXml {
+        font-size: 0.8rem;
+    }
 
-#tabelaResultados th {
-    position: sticky;
-    top: 0;
-    background: #2563eb;
-    color: white;
-    padding: 12px;
-    text-align: left;
-}
-
-#tabelaResultados td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-#tabelaResultados tr:hover {
-    background: #f0f4ff;
-}
-
-#csvFileInput {
-    padding: 10px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    flex: 1;
-}
-
-/* ===== ESTILOS PARA IMPORTAÇÃO CSV ===== */
-#csvFileInput {
-    flex: 1;
-    padding: 10px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 1rem;
-    background: white;
-    cursor: pointer;
-}
-
-#csvFileInput:hover {
-    border-color: #2563eb;
-}
-
-#btnImportarCSV {
-    background: #8b5cf6;
-}
-
-#btnImportarCSV:hover {
-    background: #7c3aed;
-}
-
-#tabelaResultados {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    margin-top: 15px;
-}
-
-#tabelaResultados table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-#tabelaResultados th {
-    position: sticky;
-    top: 0;
-    background: #2563eb;
-    color: white;
-    padding: 12px;
-    text-align: left;
-    z-index: 10;
-}
-
-#tabelaResultados td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-#tabelaResultados tr:hover {
-    background: #f0f4ff;
-}
-
-#tabelaResultados tr[style*="background-color: #fff0f0"]:hover {
-    background-color: #ffe0e0 !important;
-}
-
-/* Scrollbar para a tabela */
-#tabelaResultados::-webkit-scrollbar {
-    width: 8px;
-}
-
-#tabelaResultados::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-#tabelaResultados::-webkit-scrollbar-thumb {
-    background: #2563eb;
-    border-radius: 10px;
-}
-
-#tabelaResultados::-webkit-scrollbar-thumb:hover {
-    background: #1d4ed8;
+    #tabelaResultados th,
+    #tabelaResultados td,
+    #tabelaProdutosXml th,
+    #tabelaProdutosXml td {
+        padding: 8px 6px;
+    }
 }
 
 /* Estatísticas da importação */
@@ -682,350 +621,4 @@ mark {
 .stat-item.nao-encontrados {
     background: #fee2e2;
     color: #991b1b;
-}
-/* ===== FORÇAR VISIBILIDADE DAS ABAS ===== */
-#abaImportar {
-    display: none;
-}
-
-#abaImportar.active {
-    display: block !important;
-}
-
-#abaImportar .search-box {
-    display: flex !important;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-#csvFileInput {
-    flex: 1;
-    min-width: 250px;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    background: white;
-    cursor: pointer;
-}
-
-#csvFileInput:hover {
-    border-color: #2563eb;
-}
-
-#btnImportarCSV {
-    padding: 12px 24px;
-    background: #8b5cf6;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-#btnImportarCSV:hover {
-    background: #7c3aed;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
-}
-
-#statusImportacao {
-    margin: 15px 0;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-align: center;
-    background: #f3f4f6;
-}
-
-#resultadosImportacao {
-    margin-top: 20px;
-}
-
-/* Estilo para a tabela de resultados */
-#tabelaResultados {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    margin-top: 15px;
-}
-
-#tabelaResultados table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-#tabelaResultados th {
-    position: sticky;
-    top: 0;
-    background: #2563eb;
-    color: white;
-    padding: 12px;
-    text-align: left;
-    z-index: 10;
-}
-
-#tabelaResultados td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-#tabelaResultados tr:hover {
-    background: #f0f4ff;
-}
-/* Botão de exportar */
-.btn-exportar {
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.btn-exportar:hover {
-    background: #059669;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-}
-/* ===== ESTILOS PARA XML NFE ===== */
-#abaXml .search-box {
-    display: flex !important;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-#xmlFileInput {
-    flex: 1;
-    min-width: 250px;
-    padding: 12px 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 1rem;
-    background: white;
-    cursor: pointer;
-}
-
-#xmlFileInput:hover {
-    border-color: #2563eb;
-}
-
-#btnProcessarXml {
-    padding: 12px 24px;
-    background: #f59e0b;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-#btnProcessarXml:hover {
-    background: #d97706;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(245, 158, 11, 0.3);
-}
-
-#statusXml {
-    margin: 15px 0;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: 500;
-    text-align: center;
-    background: #f3f4f6;
-}
-
-#tabelaProdutosXml {
-    max-height: 400px;
-    overflow-y: auto;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    margin-top: 15px;
-}
-
-#tabelaProdutosXml table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-
-#tabelaProdutosXml th {
-    position: sticky;
-    top: 0;
-    background: #2563eb;
-    color: white;
-    padding: 12px;
-    text-align: left;
-    z-index: 10;
-}
-
-#tabelaProdutosXml td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e5e7eb;
-}
-
-#tabelaProdutosXml tr:hover {
-    background: #f0f4ff;
-}
-
-/* Scrollbar para a tabela */
-#tabelaProdutosXml::-webkit-scrollbar {
-    width: 8px;
-}
-
-#tabelaProdutosXml::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
-}
-
-#tabelaProdutosXml::-webkit-scrollbar-thumb {
-    background: #f59e0b;
-    border-radius: 10px;
-}
-
-#tabelaProdutosXml::-webkit-scrollbar-thumb:hover {
-    background: #d97706;
-}
-
-/* Ajuste para mobile */
-@media (max-width: 768px) {
-    #abaXml .search-box {
-        flex-direction: column;
-    }
-    
-    #xmlFileInput {
-        min-width: 100%;
-    }
-    
-    #btnProcessarXml {
-        width: 100%;
-    }
-    
-    #tabelaProdutosXml {
-        font-size: 0.8rem;
-    }
-    
-    #tabelaProdutosXml th,
-    #tabelaProdutosXml td {
-        padding: 8px 6px;
-    }
-}
-
-/* ===== FORÇAR VISIBILIDADE DE TODAS AS ABAS ===== */
-/* Garantir que todas as abas funcionem corretamente */
-.tab-content {
-    display: none !important;
-}
-
-.tab-content.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Forçar visibilidade específica para cada aba */
-#abaNcm.active,
-#abaCnpj.active,
-#abaImportar.active,
-#abaXml.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
-/* Garantir que os elementos dentro das abas apareçam */
-#abaXml .search-box,
-#abaXml #xmlFileInput,
-#abaXml #btnProcessarXml,
-#abaXml #statusXml,
-#abaXml #resultadosXml,
-#abaXml #tabelaProdutosXml {
-    display: block;
-}
-
-#abaXml .search-box {
-    display: flex !important;
-}
-
-/* Garantir que o botão da aba XML fique visível */
-.tab-button:nth-child(4) {
-    display: inline-block !important;
-}
-
-/* Reset completo para a aba XML */
-#abaXml {
-    display: none;
-}
-
-#abaXml.active {
-    display: block !important;
-}
-
-/* Garantir que o input file apareça */
-#xmlFileInput {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-/* Garantir que o botão processar apareça */
-#btnProcessarXml {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-/* ===== EMERGÊNCIA: FORÇAR VISIBILIDADE ABSOLUTA ===== */
-#abaXml {
-    display: none !important;
-}
-
-#abaXml.active {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative !important;
-    z-index: 1000 !important;
-}
-
-#xmlFileInput, 
-#btnProcessarXml {
-    display: inline-block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-}
-
-/* Debug visual - remove depois que funcionar */
-#abaXml.active {
-    border: 3px solid red !important;
-    background: #fff9f9 !important;
-    padding: 20px !important;
-}
-
-/* Garantir que o botão da aba XML tenha o estilo correto */
-.tab-button[onclick*="xml"] {
-    display: inline-block !important;
-    background-color: transparent !important;
-}
-
-.tab-button[onclick*="xml"].active {
-    background-color: #2563eb !important;
-    color: white !important;
 }
