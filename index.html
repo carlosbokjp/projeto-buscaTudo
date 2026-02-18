@@ -16,6 +16,7 @@
             <button class="tab-button active" onclick="mostrarAba('ncm')">Busca NCM</button>
             <button class="tab-button" onclick="mostrarAba('cnpj')">Busca CNPJ</button>
             <button class="tab-button" onclick="mostrarAba('importar')">Importar CSV</button>
+            <button class="tab-button" onclick="mostrarAba('xml')">XML NFe</button>
         </div>
 
         <!-- Aba NCM -->
@@ -67,6 +68,25 @@
                         </button>
                     </div>
                     <div id="tabelaResultados"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Aba XML NFe -->
+        <div id="abaXml" class="tab-content hidden">
+            <div class="search-box">
+                <input type="file" id="xmlFileInput" accept=".xml" multiple />
+                <button id="btnProcessarXml">Processar XML NFe</button>
+            </div>
+            <div id="statusXml"></div>
+            <div id="resultadosXml" class="hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Produtos Extraídos da NFe:</h3>
+                        <button id="btnExportarXmlCSV" class="btn-exportar">
+                            ⬇️ Exportar CSV
+                        </button>
+                    </div>
+                    <div id="tabelaProdutosXml"></div>
                 </div>
             </div>
         </div>

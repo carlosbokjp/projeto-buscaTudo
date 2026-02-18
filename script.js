@@ -71,6 +71,9 @@ window.mostrarAba = function(nomeAba) {
     } else if (nomeAba === 'importar') {
         document.querySelectorAll('.tab-button')[2].classList.add('active');
         document.getElementById('abaImportar').classList.add('active');
+    } else if (nomeAba === 'xml') {
+        document.querySelectorAll('.tab-button')[3].classList.add('active');
+        document.getElementById('abaXml').classList.add('active');
     }
 };
 
@@ -451,6 +454,214 @@ function exportarResultadosCSV() {
 // Event listener do botão exportar
 if (btnExportarCSV) {
     btnExportarCSV.addEventListener('click', exportarResultadosCSV);
+}
+
+// ========== FUNÇÕES PARA XML NFE ==========
+// Elementos XML
+const xmlFileInput = document.getElementById('xmlFileInput');
+const btnProcessarXml = document.getElementById('btnProcessarXml');
+const statusXml = document.getElementById('statusXml');
+const resultadosXml = document.getElementById('resultadosXml');
+const tabelaProdutosXml = document.getElementById('tabelaProdutosXml');
+const btnExportarXmlCSV = document.getElementById('btnExportarXmlCSV');
+
+// Função para extrair produtos do XML
+function extrairProdutosXML(xmlString) {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+    
+    // Namespace da NFe
+    const ns = {
+        nfe: "http://www.portalfiscal.inf.br/nfe"
+    };
+    
+    // Função para obter valor de tag com namespace
+    function getTagValue(parent, tagName) {
+        const element = parent.getElementsByTagNameNS(ns.nfe, tagName)[0];
+        return element ? element.textContent : '';
+    }
+    
+    // Encontrar todos os produtos (det)
+    const produtos = xmlDoc.getElementsByTagNameNS(ns.nfe, "det");
+    const listaProdutos = [];
+    
+    for (let i = 0; i < produtos.length; i++) {
+        const prod = produtos[i].getElementsByTagNameNS(ns.nfe, "prod")[0];
+        
+        if (prod) {
+            const produto = {
+                nome: getTagValue(prod, "xProd"),
+                ncm: getTagValue(prod, "NCM"),
+                cfop: getTagValue(prod, "CFOP"),
+                unidade: getTagValue(prod, "uCom"),
+                quantidade: getTagValue(prod, "qCom"),
+                valorUnitario: getTagValue(prod, "vUnCom"),
+                valorTotal: getTagValue(prod, "vProd"),
+                codigo: getTagValue(prod, "cProd"),
+                ean: getTagValue(prod, "cEAN") || 'SEM GTIN'
+            };
+            
+            listaProdutos.push(produto);
+        }
+    }
+    
+    return listaProdutos;
+}
+
+// Função para exibir tabela de produtos do XML
+function exibirTabelaProdutosXml(produtos) {
+    window.ultimosProdutosXml = produtos;
+    
+    let html = `
+        <div style="margin-bottom: 15px; padding: 10px; background: #f0f4ff; border-radius: 8px;">
+            <strong>Total de produtos:</strong> ${produtos.length}
+        </div>
+        <table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #2563eb; color: white;">
+                    <th style="padding: 12px; text-align: left;">Código</th>
+                    <th style="padding: 12px; text-align: left;">Produto</th>
+                    <th style="padding: 12px; text-align: left;">NCM</th>
+                    <th style="padding: 12px; text-align: left;">CFOP</th>
+                    <th style="padding: 12px; text-align: left;">Qtd</th>
+                    <th style="padding: 12px; text-align: left;">UN</th>
+                    <th style="padding: 12px; text-align: left;">Valor Unit.</th>
+                    <th style="padding: 12px; text-align: left;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    produtos.forEach(p => {
+        html += `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 10px;">${p.codigo}</td>
+                <td style="padding: 10px;">${p.nome}</td>
+                <td style="padding: 10px; font-weight: bold; color: #2563eb;">${p.ncm || '---'}</td>
+                <td style="padding: 10px;">${p.cfop}</td>
+                <td style="padding: 10px; text-align: right;">${parseFloat(p.quantidade).toFixed(2)}</td>
+                <td style="padding: 10px;">${p.unidade}</td>
+                <td style="padding: 10px; text-align: right;">R$ ${parseFloat(p.valorUnitario).toFixed(2)}</td>
+                <td style="padding: 10px; text-align: right;">R$ ${parseFloat(p.valorTotal).toFixed(2)}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+        </table>
+    `;
+    
+    tabelaProdutosXml.innerHTML = html;
+    resultadosXml.classList.remove('hidden');
+}
+
+// Função para processar XML
+btnProcessarXml.addEventListener('click', async () => {
+    if (!xmlFileInput.files || xmlFileInput.files.length === 0) {
+        statusXml.innerText = "❌ Selecione um ou mais arquivos XML!";
+        statusXml.style.color = "red";
+        return;
+    }
+    
+    statusXml.innerText = `📂 Processando ${xmlFileInput.files.length} arquivo(s)...`;
+    statusXml.style.color = "#2563eb";
+    
+    const todosProdutos = [];
+    
+    try {
+        for (let i = 0; i < xmlFileInput.files.length; i++) {
+            const file = xmlFileInput.files[i];
+            const text = await file.text();
+            const produtos = extrairProdutosXML(text);
+            
+            // Adiciona informação de qual arquivo veio cada produto
+            produtos.forEach(p => {
+                p.arquivoOrigem = file.name;
+            });
+            
+            todosProdutos.push(...produtos);
+        }
+        
+        if (todosProdutos.length === 0) {
+            statusXml.innerText = "❌ Nenhum produto encontrado nos XMLs!";
+            statusXml.style.color = "red";
+            return;
+        }
+        
+        exibirTabelaProdutosXml(todosProdutos);
+        statusXml.innerText = `✅ Processamento concluído! ${todosProdutos.length} produtos encontrados.`;
+        statusXml.style.color = "green";
+        
+    } catch (error) {
+        statusXml.innerText = `❌ Erro ao processar XML: ${error.message}`;
+        statusXml.style.color = "red";
+        console.error(error);
+    }
+});
+
+// Função para exportar produtos do XML para CSV
+function exportarProdutosXmlCSV() {
+    if (!window.ultimosProdutosXml || window.ultimosProdutosXml.length === 0) {
+        alert('❌ Não há produtos para exportar!');
+        return;
+    }
+    
+    const produtos = window.ultimosProdutosXml;
+    const cabecalho = [
+        'Arquivo Origem',
+        'Código',
+        'Produto',
+        'NCM',
+        'CFOP',
+        'Quantidade',
+        'Unidade',
+        'Valor Unitário',
+        'Valor Total',
+        'EAN'
+    ];
+    
+    const linhas = produtos.map(p => [
+        `"${p.arquivoOrigem || 'NFe'}"`,
+        `"${p.codigo}"`,
+        `"${p.nome.replace(/"/g, '""')}"`,
+        p.ncm || '',
+        p.cfop || '',
+        parseFloat(p.quantidade).toFixed(2).replace('.', ','),
+        p.unidade || '',
+        parseFloat(p.valorUnitario).toFixed(2).replace('.', ','),
+        parseFloat(p.valorTotal).toFixed(2).replace('.', ','),
+        p.ean || ''
+    ]);
+    
+    const conteudoCSV = [
+        cabecalho.join(';'),
+        ...linhas.map(linha => linha.join(';'))
+    ].join('\n');
+    
+    const blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    const data = new Date();
+    const dataStr = data.toISOString().slice(0,10).replace(/-/g, '');
+    const horaStr = data.toTimeString().slice(0,8).replace(/:/g, '');
+    const nomeArquivo = `produtos_nfe_${dataStr}_${horaStr}.csv`;
+    
+    link.href = url;
+    link.download = nomeArquivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    statusXml.innerText = `✅ Arquivo "${nomeArquivo}" gerado com sucesso!`;
+    statusXml.style.color = "green";
+}
+
+// Event listener do botão exportar XML
+if (btnExportarXmlCSV) {
+    btnExportarXmlCSV.addEventListener('click', exportarProdutosXmlCSV);
 }
 
 // ========== INICIALIZAÇÃO ==========
