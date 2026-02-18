@@ -25,6 +25,14 @@ const resultadosImportacao = document.getElementById('resultadosImportacao');
 const tabelaResultados = document.getElementById('tabelaResultados');
 const btnExportarCSV = document.getElementById('btnExportarCSV');
 
+// Elementos XML
+const xmlFileInput = document.getElementById('xmlFileInput');
+const btnProcessarXml = document.getElementById('btnProcessarXml');
+const statusXml = document.getElementById('statusXml');
+const resultadosXml = document.getElementById('resultadosXml');
+const tabelaProdutosXml = document.getElementById('tabelaProdutosXml');
+const btnExportarXmlCSV = document.getElementById('btnExportarXmlCSV');
+
 console.log('✅ Script carregado!');
 
 // ========== FUNÇÃO PARA VERIFICAR SE NCM TEM 8 DÍGITOS ==========
@@ -328,15 +336,16 @@ function exibirTabelaResultados(resultados) {
             <span style="color: green;">✅ Encontrados: ${encontrados}</span> | 
             <span style="color: red;">❌ Não encontrados: ${naoEncontrados}</span>
         </div>
-        <table style="width:100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #2563eb; color: white;">
-                    <th style="padding: 12px; text-align: left;">Produto</th>
-                    <th style="padding: 12px; text-align: left;">NCM (8 dígitos)</th>
-                    <th style="padding: 12px; text-align: left;">Descrição NCM</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div style="overflow-x: auto;">
+            <table style="width:100%; border-collapse: collapse; min-width: 600px;">
+                <thead>
+                    <tr style="background: #2563eb; color: white;">
+                        <th style="padding: 12px; text-align: left;">Produto</th>
+                        <th style="padding: 12px; text-align: left;">NCM (8 dígitos)</th>
+                        <th style="padding: 12px; text-align: left;">Descrição NCM</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
     
     resultados.forEach(r => {
@@ -356,8 +365,9 @@ function exibirTabelaResultados(resultados) {
     });
     
     html += `
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     `;
     
     tabelaResultados.innerHTML = html;
@@ -457,14 +467,6 @@ if (btnExportarCSV) {
 }
 
 // ========== FUNÇÕES PARA XML NFE ==========
-// Elementos XML
-const xmlFileInput = document.getElementById('xmlFileInput');
-const btnProcessarXml = document.getElementById('btnProcessarXml');
-const statusXml = document.getElementById('statusXml');
-const resultadosXml = document.getElementById('resultadosXml');
-const tabelaProdutosXml = document.getElementById('tabelaProdutosXml');
-const btnExportarXmlCSV = document.getElementById('btnExportarXmlCSV');
-
 // Função para extrair produtos do XML
 function extrairProdutosXML(xmlString) {
     const parser = new DOMParser();
@@ -481,15 +483,37 @@ function extrairProdutosXML(xmlString) {
         return element ? element.textContent : '';
     }
     
+    // Encontrar a tag infNFe (pode estar em níveis diferentes)
+    let infNFe = xmlDoc.getElementsByTagNameNS(ns.nfe, "infNFe")[0];
+    
+    // Se não encontrou com namespace, tenta sem namespace
+    if (!infNFe) {
+        infNFe = xmlDoc.getElementsByTagName("infNFe")[0];
+    }
+    
+    if (!infNFe) {
+        throw new Error("Estrutura de NFe não encontrada no XML");
+    }
+    
     // Encontrar todos os produtos (det)
-    const produtos = xmlDoc.getElementsByTagNameNS(ns.nfe, "det");
+    const dets = infNFe.getElementsByTagNameNS(ns.nfe, "det");
     const listaProdutos = [];
     
+    // Se não encontrou com namespace, tenta sem namespace
+    const produtos = dets.length > 0 ? dets : infNFe.getElementsByTagName("det");
+    
     for (let i = 0; i < produtos.length; i++) {
-        const prod = produtos[i].getElementsByTagNameNS(ns.nfe, "prod")[0];
+        // Tenta encontrar prod com namespace
+        let prod = produtos[i].getElementsByTagNameNS(ns.nfe, "prod")[0];
+        
+        // Se não encontrou, tenta sem namespace
+        if (!prod) {
+            prod = produtos[i].getElementsByTagName("prod")[0];
+        }
         
         if (prod) {
             const produto = {
+                codigo: getTagValue(prod, "cProd"),
                 nome: getTagValue(prod, "xProd"),
                 ncm: getTagValue(prod, "NCM"),
                 cfop: getTagValue(prod, "CFOP"),
@@ -497,7 +521,6 @@ function extrairProdutosXML(xmlString) {
                 quantidade: getTagValue(prod, "qCom"),
                 valorUnitario: getTagValue(prod, "vUnCom"),
                 valorTotal: getTagValue(prod, "vProd"),
-                codigo: getTagValue(prod, "cProd"),
                 ean: getTagValue(prod, "cEAN"),
                 eanTrib: getTagValue(prod, "cEANTrib")
             };
@@ -517,42 +540,51 @@ function exibirTabelaProdutosXml(produtos) {
         <div style="margin-bottom: 15px; padding: 10px; background: #f0f4ff; border-radius: 8px;">
             <strong>Total de produtos:</strong> ${produtos.length}
         </div>
-        <table style="width:100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #2563eb; color: white;">
-                    <th style="padding: 12px; text-align: left;">Código</th>
-                    <th style="padding: 12px; text-align: left;">Produto</th>
-                    <th style="padding: 12px; text-align: left;">NCM</th>
-                    <th style="padding: 12px; text-align: left;">CFOP</th>
-                    <th style="padding: 12px; text-align: left;">GTIN Comercial (cEAN)</th>
-                    <th style="padding: 12px; text-align: left;">GTIN Tributável (cEANTrib)</th>
-                    <th style="padding: 12px; text-align: left;">Qtd</th>
-                    <th style="padding: 12px; text-align: left;">UN</th>
-                    <th style="padding: 12px; text-align: left;">Valor Unit.</th>
-                    <th style="padding: 12px; text-align: left;">Total</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div style="overflow-x: auto;">
+            <table style="width:100%; border-collapse: collapse; min-width: 1200px;">
+                <thead>
+                    <tr style="background: #2563eb; color: white;">
+                        <th style="padding: 12px; text-align: left;">Código</th>
+                        <th style="padding: 12px; text-align: left;">Produto</th>
+                        <th style="padding: 12px; text-align: left;">NCM</th>
+                        <th style="padding: 12px; text-align: left;">CFOP</th>
+                        <th style="padding: 12px; text-align: left;">GTIN Comercial (cEAN)</th>
+                        <th style="padding: 12px; text-align: left;">GTIN Tributável (cEANTrib)</th>
+                        <th style="padding: 12px; text-align: right;">Qtd</th>
+                        <th style="padding: 12px; text-align: left;">UN</th>
+                        <th style="padding: 12px; text-align: right;">Valor Unit.</th>
+                        <th style="padding: 12px; text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
     
     produtos.forEach(p => {
+        // Formatar valores para exibição
+        const quantidade = p.quantidade ? parseFloat(p.quantidade).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+        const valorUnit = p.valorUnitario ? parseFloat(p.valorUnitario).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+        const valorTotal = p.valorTotal ? parseFloat(p.valorTotal).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
+        
         html += `
             <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 10px;">${p.codigo}</td>
-                <td style="padding: 10px;">${p.nome}</td>
+                <td style="padding: 10px;">${p.codigo || '---'}</td>
+                <td style="padding: 10px;">${p.nome || '---'}</td>
                 <td style="padding: 10px; font-weight: bold; color: #2563eb;">${p.ncm || '---'}</td>
-                <td style="padding: 10px;">${p.cfop}</td>
-                <td style="padding: 10px; text-align: right;">${parseFloat(p.quantidade).toFixed(2)}</td>
-                <td style="padding: 10px;">${p.unidade}</td>
-                <td style="padding: 10px; text-align: right;">R$ ${parseFloat(p.valorUnitario).toFixed(2)}</td>
-                <td style="padding: 10px; text-align: right;">R$ ${parseFloat(p.valorTotal).toFixed(2)}</td>
+                <td style="padding: 10px;">${p.cfop || '---'}</td>
+                <td style="padding: 10px; font-family: monospace;">${p.ean || '---'}</td>
+                <td style="padding: 10px; font-family: monospace; color: #f59e0b;">${p.eanTrib || '---'}</td>
+                <td style="padding: 10px; text-align: right;">${quantidade}</td>
+                <td style="padding: 10px;">${p.unidade || '---'}</td>
+                <td style="padding: 10px; text-align: right;">R$ ${valorUnit}</td>
+                <td style="padding: 10px; text-align: right;">R$ ${valorTotal}</td>
             </tr>
         `;
     });
     
     html += `
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     `;
     
     tabelaProdutosXml.innerHTML = html;
@@ -569,21 +601,27 @@ btnProcessarXml.addEventListener('click', async () => {
     
     statusXml.innerText = `📂 Processando ${xmlFileInput.files.length} arquivo(s)...`;
     statusXml.style.color = "#2563eb";
+    resultadosXml.classList.add('hidden');
     
     const todosProdutos = [];
+    const erros = [];
     
     try {
         for (let i = 0; i < xmlFileInput.files.length; i++) {
             const file = xmlFileInput.files[i];
-            const text = await file.text();
-            const produtos = extrairProdutosXML(text);
-            
-            // Adiciona informação de qual arquivo veio cada produto
-            produtos.forEach(p => {
-                p.arquivoOrigem = file.name;
-            });
-            
-            todosProdutos.push(...produtos);
+            try {
+                const text = await file.text();
+                const produtos = extrairProdutosXML(text);
+                
+                // Adiciona informação de qual arquivo veio cada produto
+                produtos.forEach(p => {
+                    p.arquivoOrigem = file.name;
+                });
+                
+                todosProdutos.push(...produtos);
+            } catch (e) {
+                erros.push(`${file.name}: ${e.message}`);
+            }
         }
         
         if (todosProdutos.length === 0) {
@@ -593,8 +631,13 @@ btnProcessarXml.addEventListener('click', async () => {
         }
         
         exibirTabelaProdutosXml(todosProdutos);
-        statusXml.innerText = `✅ Processamento concluído! ${todosProdutos.length} produtos encontrados.`;
-        statusXml.style.color = "green";
+        
+        let mensagem = `✅ Processamento concluído! ${todosProdutos.length} produtos encontrados.`;
+        if (erros.length > 0) {
+            mensagem += ` ⚠️ ${erros.length} arquivo(s) com erro.`;
+        }
+        statusXml.innerText = mensagem;
+        statusXml.style.color = erros.length > 0 ? "orange" : "green";
         
     } catch (error) {
         statusXml.innerText = `❌ Erro ao processar XML: ${error.message}`;
@@ -622,23 +665,21 @@ function exportarProdutosXmlCSV() {
         'Quantidade',
         'Unidade',
         'Valor Unitário',
-        'Valor Total',
-        'EAN'
+        'Valor Total'
     ];
     
     const linhas = produtos.map(p => [
         `"${p.arquivoOrigem || 'NFe'}"`,
-        `"${p.codigo}"`,
-        `"${p.nome.replace(/"/g, '""')}"`,
+        `"${p.codigo || ''}"`,
+        `"${(p.nome || '').replace(/"/g, '""')}"`,
         p.ncm || '',
         p.cfop || '',
         p.ean || '',
         p.eanTrib || '',
-        parseFloat(p.quantidade).toFixed(2).replace('.', ','),
+        p.quantidade ? parseFloat(p.quantidade).toFixed(2).replace('.', ',') : '0,00',
         p.unidade || '',
-        parseFloat(p.valorUnitario).toFixed(2).replace('.', ','),
-        parseFloat(p.valorTotal).toFixed(2).replace('.', ','),
-        p.ean || ''
+        p.valorUnitario ? parseFloat(p.valorUnitario).toFixed(2).replace('.', ',') : '0,00',
+        p.valorTotal ? parseFloat(p.valorTotal).toFixed(2).replace('.', ',') : '0,00'
     ]);
     
     const conteudoCSV = [
