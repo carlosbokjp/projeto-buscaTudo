@@ -1,0 +1,802 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.app-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 800px;
+    padding: 30px;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 2rem;
+}
+
+h1 + p {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 0.95rem;
+}
+
+/* Estilos das Abas */
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 5px;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    background: transparent;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+}
+
+.tab-button:hover {
+    color: #2563eb;
+    background: #f0f4ff;
+}
+
+.tab-button.active {
+    color: #2563eb;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #2563eb;
+    border-radius: 3px 3px 0 0;
+}
+
+.tab-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Estilos da Busca */
+.search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box input {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+}
+
+.search-box button {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.search-box button:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37,99,235,0.3);
+}
+
+.search-box button#btnSincronizarBase {
+    background: #10b981;
+}
+
+.search-box button#btnSincronizarBase:hover {
+    background: #059669;
+}
+
+/* Status */
+#statusNcm, #statusCnpj {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    background: #f3f4f6;
+}
+
+/* Lista de Resultados NCM */
+#listaResultadosNcm {
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin: 20px 0;
+}
+
+.resultado-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.resultado-item:hover {
+    background: #f0f4ff;
+    transform: translateX(5px);
+}
+
+.resultado-item:last-child {
+    border-bottom: none;
+}
+
+.ncm-code {
+    font-weight: 700;
+    color: #2563eb;
+    background: #e6edff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.ncm-desc {
+    color: #4b5563;
+    flex: 1;
+}
+
+mark {
+    background: #fef08a;
+    color: #1e293b;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Cards de Resultado */
+.card {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    border: 1px solid #e5e7eb;
+}
+
+.card h3 {
+    color: #1e293b;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.card p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.card strong {
+    color: #2563eb;
+    min-width: 100px;
+    display: inline-block;
+}
+
+/* Estilos específicos para CNPJ */
+.cnpj-card {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.cnpj-info {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 15px;
+}
+
+/* Scrollbar personalizada para a área de CNPJ */
+.cnpj-info::-webkit-scrollbar {
+    width: 8px;
+}
+
+.cnpj-info::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.cnpj-info::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border-radius: 10px;
+}
+
+.cnpj-info::-webkit-scrollbar-thumb:hover {
+    background: #1d4ed8;
+}
+
+.cnpj-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.cnpj-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.cnpj-section h4 {
+    color: #2563eb;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cnpj-section h4::before {
+    content: '📌';
+    font-size: 1rem;
+}
+
+.cnpj-section p {
+    margin: 8px 0;
+    line-height: 1.5;
+    color: #4b5563;
+}
+
+.cnpj-section strong {
+    color: #1e293b;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.socio-item {
+    background: white;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.socio-item:hover {
+    border-color: #2563eb;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.1);
+}
+
+.socio-item p {
+    margin: 4px 0;
+}
+
+.socio-item p:first-child {
+    font-weight: 600;
+    color: #2563eb;
+}
+
+/* Mensagens de status */
+#statusCnpj {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+/* Classe utilitária */
+.hidden {
+    display: none !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .search-box {
+        flex-direction: column;
+    }
+
+    .search-box input {
+        min-width: 100%;
+    }
+
+    .search-box button {
+        width: 100%;
+    }
+
+    .tabs {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .tab-button {
+        width: 100%;
+        text-align: center;
+    }
+
+    .tab-button.active::after {
+        display: none;
+    }
+
+    .tab-button.active {
+        background: #2563eb;
+        color: white;
+        border-radius: 8px;
+    }
+
+    .card p strong {
+        min-width: 80px;
+    }
+    
+    .cnpj-section strong {
+        min-width: 100px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.resultado-item, .cnpj-section {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Estados de loading */
+.loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Melhorias visuais para os cards */
+.cnpj-section h4::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, #2563eb, transparent);
+    margin-left: 10px;
+}
+
+/* Destaque para informações importantes */
+.cnpj-section p strong {
+    background: #f0f4ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Efeito de hover nos botões das abas no mobile */
+@media (max-width: 768px) {
+    .tab-button.active {
+        background: #2563eb;
+        color: white;
+    }
+    
+    .tab-button:not(.active):hover {
+        background: #f0f4ff;
+    }
+}
+/* FORÇAR VISIBILIDADE DAS ABAS */
+#abaNcm.active,
+#abaCnpj.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Garantir que a busca CNPJ apareça */
+#abaCnpj .search-box {
+    display: flex !important;
+}
+
+#cnpjInput, 
+#btnBuscarCnpj {
+    display: inline-block !important;
+}
+/* ===== GARANTIR VISIBILIDADE DA ABA CNPJ ===== */
+#abaCnpj.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#abaCnpj .search-box {
+    display: flex !important;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#cnpjInput {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+#btnBuscarCnpj {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+#btnBuscarCnpj:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(37,99,235,0.3);
+}
+
+#statusCnpj {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    background: #f3f4f6;
+}
+
+#resultadoCnpj {
+    margin-top: 20px;
+}
+
+/* Ajuste para mobile */
+@media (max-width: 768px) {
+    #abaCnpj .search-box {
+        flex-direction: column;
+    }
+    
+    #cnpjInput {
+        min-width: 100%;
+    }
+    
+    #btnBuscarCnpj {
+        width: 100%;
+    }
+}
+/* Estilos para a tabela de importação */
+#tabelaResultados {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+}
+
+#tabelaResultados table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#tabelaResultados th {
+    position: sticky;
+    top: 0;
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+#tabelaResultados td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#tabelaResultados tr:hover {
+    background: #f0f4ff;
+}
+
+#csvFileInput {
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    flex: 1;
+}
+
+/* ===== ESTILOS PARA IMPORTAÇÃO CSV ===== */
+#csvFileInput {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+}
+
+#csvFileInput:hover {
+    border-color: #2563eb;
+}
+
+#btnImportarCSV {
+    background: #8b5cf6;
+}
+
+#btnImportarCSV:hover {
+    background: #7c3aed;
+}
+
+#tabelaResultados {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+#tabelaResultados table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#tabelaResultados th {
+    position: sticky;
+    top: 0;
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    z-index: 10;
+}
+
+#tabelaResultados td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#tabelaResultados tr:hover {
+    background: #f0f4ff;
+}
+
+#tabelaResultados tr[style*="background-color: #fff0f0"]:hover {
+    background-color: #ffe0e0 !important;
+}
+
+/* Scrollbar para a tabela */
+#tabelaResultados::-webkit-scrollbar {
+    width: 8px;
+}
+
+#tabelaResultados::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+#tabelaResultados::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border-radius: 10px;
+}
+
+#tabelaResultados::-webkit-scrollbar-thumb:hover {
+    background: #1d4ed8;
+}
+
+/* Estatísticas da importação */
+.resultado-stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f0f4ff;
+    border-radius: 8px;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.stat-item.encontrados {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stat-item.nao-encontrados {
+    background: #fee2e2;
+    color: #991b1b;
+}
+/* ===== FORÇAR VISIBILIDADE DAS ABAS ===== */
+#abaImportar {
+    display: none;
+}
+
+#abaImportar.active {
+    display: block !important;
+}
+
+#abaImportar .search-box {
+    display: flex !important;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#csvFileInput {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+}
+
+#csvFileInput:hover {
+    border-color: #2563eb;
+}
+
+#btnImportarCSV {
+    padding: 12px 24px;
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+#btnImportarCSV:hover {
+    background: #7c3aed;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
+}
+
+#statusImportacao {
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+    background: #f3f4f6;
+}
+
+#resultadosImportacao {
+    margin-top: 20px;
+}
+
+/* Estilo para a tabela de resultados */
+#tabelaResultados {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+#tabelaResultados table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#tabelaResultados th {
+    position: sticky;
+    top: 0;
+    background: #2563eb;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    z-index: 10;
+}
+
+#tabelaResultados td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#tabelaResultados tr:hover {
+    background: #f0f4ff;
+}
+/* Botão de exportar */
+.btn-exportar {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-exportar:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+}

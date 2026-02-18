@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas NCM e CNPJ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <h1>Consultas APIADR</h1>
+        <p>Dados fornecidos pela APIADR</p>
+        
+        <!-- Abas de navegação -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="mostrarAba('ncm')">Busca NCM</button>
+            <button class="tab-button" onclick="mostrarAba('cnpj')">Busca CNPJ</button>
+            <button class="tab-button" onclick="mostrarAba('importar')">Importar CSV</button>
+        </div>
+
+        <!-- Aba NCM -->
+        <div id="abaNcm" class="tab-content active">
+            <div class="search-box">
+                <input type="text" id="buscaNcmInput" placeholder="Digite o código ou palavra (ex: Café)">
+                <button id="btnBuscarNcm">Buscar NCM</button>
+                <button id="btnSincronizarBase">Sincronizar Base</button>
+            </div>
+            <div id="statusNcm"></div>
+            <ul id="listaResultadosNcm"></ul>
+            <div id="resultadoNcm" class="hidden">
+                <div class="card">
+                    <h3>Resultado da Busca NCM:</h3>
+                    <p><strong>Código:</strong> <span id="resCodigo"></span></p>
+                    <p><strong>Descrição:</strong> <span id="resDescricao"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba CNPJ -->
+        <div id="abaCnpj" class="tab-content hidden">
+            <div class="search-box">
+                <input type="text" id="cnpjInput" placeholder="Digite o CNPJ (apenas números)" maxlength="18">
+                <button id="btnBuscarCnpj">Consultar CNPJ</button>
+            </div>
+            <div id="statusCnpj"></div>
+            <div id="resultadoCnpj" class="hidden">
+                <div class="card cnpj-card">
+                    <h3>Resultado da Consulta CNPJ:</h3>
+                    <div id="dadosCnpj"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aba Importar CSV -->
+        <div id="abaImportar" class="tab-content hidden">
+            <div class="search-box">
+                <input type="file" id="csvFileInput" accept=".csv" />
+                <button id="btnImportarCSV">Importar CSV e Buscar NCMs</button>
+            </div>
+            <div id="statusImportacao"></div>
+            <div id="resultadosImportacao" class="hidden">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Resultados da Importação:</h3>
+                        <button id="btnExportarCSV" class="btn-exportar">
+                            ⬇️ Exportar CSV
+                        </button>
+                    </div>
+                    <div id="tabelaResultados"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
