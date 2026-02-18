@@ -632,6 +632,8 @@ function exportarProdutosXmlCSV() {
         `"${p.nome.replace(/"/g, '""')}"`,
         p.ncm || '',
         p.cfop || '',
+        p.ean || '',
+        p.eanTrib || '',
         parseFloat(p.quantidade).toFixed(2).replace('.', ','),
         p.unidade || '',
         parseFloat(p.valorUnitario).toFixed(2).replace('.', ','),
