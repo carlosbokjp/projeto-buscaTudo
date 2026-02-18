@@ -926,3 +926,106 @@ mark {
         padding: 8px 6px;
     }
 }
+
+/* ===== FORÇAR VISIBILIDADE DE TODAS AS ABAS ===== */
+/* Garantir que todas as abas funcionem corretamente */
+.tab-content {
+    display: none !important;
+}
+
+.tab-content.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Forçar visibilidade específica para cada aba */
+#abaNcm.active,
+#abaCnpj.active,
+#abaImportar.active,
+#abaXml.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Garantir que os elementos dentro das abas apareçam */
+#abaXml .search-box,
+#abaXml #xmlFileInput,
+#abaXml #btnProcessarXml,
+#abaXml #statusXml,
+#abaXml #resultadosXml,
+#abaXml #tabelaProdutosXml {
+    display: block;
+}
+
+#abaXml .search-box {
+    display: flex !important;
+}
+
+/* Garantir que o botão da aba XML fique visível */
+.tab-button:nth-child(4) {
+    display: inline-block !important;
+}
+
+/* Reset completo para a aba XML */
+#abaXml {
+    display: none;
+}
+
+#abaXml.active {
+    display: block !important;
+}
+
+/* Garantir que o input file apareça */
+#xmlFileInput {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Garantir que o botão processar apareça */
+#btnProcessarXml {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ===== EMERGÊNCIA: FORÇAR VISIBILIDADE ABSOLUTA ===== */
+#abaXml {
+    display: none !important;
+}
+
+#abaXml.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
+#xmlFileInput, 
+#btnProcessarXml {
+    display: inline-block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* Debug visual - remove depois que funcionar */
+#abaXml.active {
+    border: 3px solid red !important;
+    background: #fff9f9 !important;
+    padding: 20px !important;
+}
+
+/* Garantir que o botão da aba XML tenha o estilo correto */
+.tab-button[onclick*="xml"] {
+    display: inline-block !important;
+    background-color: transparent !important;
+}
+
+.tab-button[onclick*="xml"].active {
+    background-color: #2563eb !important;
+    color: white !important;
+}
