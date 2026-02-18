@@ -498,8 +498,8 @@ function extrairProdutosXML(xmlString) {
                 valorUnitario: getTagValue(prod, "vUnCom"),
                 valorTotal: getTagValue(prod, "vProd"),
                 codigo: getTagValue(prod, "cProd"),
-                ean: getTagValue(prod, "cEAN") || 'SEM GTIN',
-                eanTrib: getTagValue(prod, "cEANTrib") || 'SEM GTIN'
+                ean: getTagValue(prod, "cEAN"),
+                eanTrib: getTagValue(prod, "cEANTrib")
             };
             
             listaProdutos.push(produto);
