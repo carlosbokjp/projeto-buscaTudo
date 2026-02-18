@@ -498,7 +498,8 @@ function extrairProdutosXML(xmlString) {
                 valorUnitario: getTagValue(prod, "vUnCom"),
                 valorTotal: getTagValue(prod, "vProd"),
                 codigo: getTagValue(prod, "cProd"),
-                ean: getTagValue(prod, "cEAN") || 'SEM GTIN'
+                ean: getTagValue(prod, "cEAN") || 'SEM GTIN',
+                eanTrib: getTagValue(prod, "cEANTrib") || 'SEM GTIN'
             };
             
             listaProdutos.push(produto);
@@ -523,6 +524,8 @@ function exibirTabelaProdutosXml(produtos) {
                     <th style="padding: 12px; text-align: left;">Produto</th>
                     <th style="padding: 12px; text-align: left;">NCM</th>
                     <th style="padding: 12px; text-align: left;">CFOP</th>
+                    <th style="padding: 12px; text-align: left;">GTIN Comercial (cEAN)</th>
+                    <th style="padding: 12px; text-align: left;">GTIN Tributável (cEANTrib)</th>
                     <th style="padding: 12px; text-align: left;">Qtd</th>
                     <th style="padding: 12px; text-align: left;">UN</th>
                     <th style="padding: 12px; text-align: left;">Valor Unit.</th>
@@ -614,6 +617,8 @@ function exportarProdutosXmlCSV() {
         'Produto',
         'NCM',
         'CFOP',
+        'GTIN Comercial (cEAN)',
+        'GTIN Tributável (cEANTrib)',
         'Quantidade',
         'Unidade',
         'Valor Unitário',
