@@ -43,24 +43,287 @@ function ncmTem8Digitos(codigo) {
 }
 
 // ========== FUNÇÃO PARA FORMATAR CAMPOS ==========
+
 function formatarCampoCNPJ(valor, tipo) {
-    if (!valor || valor === 'null' || valor === 'undefined') return 'Não informado';
-    valor = String(valor);
+    if (!valor || valor === 'null' || valor === 'undefined' || valor === '') return 'Não informado';
+    valor = String(valor).trim();
     
     switch(tipo) {
         case 'telefone':
-            if (valor.length === 10) return valor.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
-            if (valor.length === 11) return valor.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+            // Remove tudo que não é número
+            const numeros = valor.replace(/\D/g, '');
+            
+            if (numeros.length === 10) {
+                return numeros.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+            }
+            if (numeros.length === 11) {
+                return numeros.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+            }
+            if (numeros.length === 8) {
+                return numeros.replace(/^(\d{4})(\d{4})$/, '$1-$2');
+            }
+            if (numeros.length === 9) {
+                return numeros.replace(/^(\d{5})(\d{4})$/, '$1-$2');
+            }
+            // Se não conseguir formatar, retorna o valor original
             return valor;
+            
         case 'cep':
-            if (valor.length === 8) return valor.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+            const cepNumeros = valor.replace(/\D/g, '');
+            if (cepNumeros.length === 8) {
+                return cepNumeros.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+            }
             return valor;
+            
         case 'capitalSocial':
             const num = parseFloat(valor);
             return isNaN(num) ? 'Não informado' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+            
         default:
             return valor;
     }
+}
+
+// ========== FUNÇÃO PARA IMPRIMIR CARTÃO CNPJ ==========
+function imprimirCartaoCNPJ() {
+    const dados = window.ultimoCnpjConsultado;
+    if (!dados) {
+        alert('Nenhum dado de CNPJ disponível para impressão!');
+        return;
+    }
+
+    // Formatar dados para impressão
+    const cidadeNome = dados.cidade?.nome || 'Não informado';
+    const uf = dados.uf || 'Não informado';
+    const porteDescricao = dados.porte?.descricao || 'Não informado';
+    const temSocios = dados.qsa && dados.qsa.length > 0;
+    
+    // Telefones
+    let telefone1 = 'Não informado';
+    let telefone2 = 'Não informado';
+    
+    if (dados.telefone1) {
+        telefone1 = formatarCampoCNPJ(dados.telefone1, 'telefone');
+    } else if (dados.ddd_telefone_1) {
+        telefone1 = `(${dados.ddd_telefone_1}) ${dados.telefone_1}`;
+    } else if (dados.telefone) {
+        telefone1 = formatarCampoCNPJ(dados.telefone, 'telefone');
+    }
+    
+    if (dados.telefone2) {
+        telefone2 = formatarCampoCNPJ(dados.telefone2, 'telefone');
+    } else if (dados.ddd_telefone_2) {
+        telefone2 = `(${dados.ddd_telefone_2}) ${dados.telefone_2}`;
+    }
+    
+    // Email
+    let email = dados.email || 'Não informado';
+    if (dados.email === null || dados.email === undefined || dados.email === '') {
+        email = 'Não informado';
+    }
+
+    // Criar janela de impressão
+    const janelaImpressao = window.open('', '_blank');
+    
+    // HTML do cartão
+    const htmlCartao = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Cartão CNPJ - ${dados.cnpj || ''}</title>
+            <meta charset="UTF-8">
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                    padding: 0;
+                    background: #fff;
+                }
+                .cartao {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    border: 2px solid #2563eb;
+                    border-radius: 15px;
+                    padding: 25px;
+                    background: white;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                }
+                .cabecalho {
+                    text-align: center;
+                    border-bottom: 2px solid #2563eb;
+                    padding-bottom: 15px;
+                    margin-bottom: 20px;
+                }
+                .cabecalho h1 {
+                    color: #2563eb;
+                    margin: 0;
+                    font-size: 24px;
+                    text-transform: uppercase;
+                }
+                .cabecalho .data {
+                    color: #666;
+                    font-size: 12px;
+                    margin-top: 5px;
+                }
+                .secao {
+                    margin-bottom: 20px;
+                    page-break-inside: avoid;
+                }
+                .secao h3 {
+                    color: #2563eb;
+                    border-bottom: 1px solid #2563eb;
+                    padding-bottom: 5px;
+                    margin: 10px 0;
+                    font-size: 16px;
+                }
+                .grid-2 {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                }
+                .campo {
+                    margin-bottom: 10px;
+                }
+                .campo .label {
+                    font-weight: bold;
+                    color: #666;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                }
+                .campo .valor {
+                    font-size: 14px;
+                    color: #333;
+                    margin-top: 2px;
+                }
+                .destaque {
+                    background: #f0f4ff;
+                    padding: 15px;
+                    border-radius: 8px;
+                    margin: 10px 0;
+                }
+                .socio-item {
+                    border-left: 3px solid #2563eb;
+                    padding-left: 10px;
+                    margin-bottom: 10px;
+                }
+                .rodape {
+                    margin-top: 30px;
+                    text-align: center;
+                    font-size: 11px;
+                    color: #999;
+                    border-top: 1px dashed #ccc;
+                    padding-top: 10px;
+                }
+                @media print {
+                    body { margin: 0; }
+                    .cartao { box-shadow: none; border-color: #000; }
+                    .cabecalho h1 { color: #000; }
+                    .secao h3 { color: #000; border-bottom-color: #000; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="cartao">
+                <div class="cabecalho">
+                    <h1>📋 CARTÃO CNPJ</h1>
+                    <div class="data">Documento gerado em: ${new Date().toLocaleString('pt-BR')}</div>
+                </div>
+                
+                <div class="secao">
+                    <h3>🏢 DADOS PRINCIPAIS</h3>
+                    <div class="grid-2">
+                        <div class="campo">
+                            <div class="label">CNPJ</div>
+                            <div class="valor">${dados.cnpj || 'Não informado'}</div>
+                        </div>
+                        <div class="campo">
+                            <div class="label">Situação</div>
+                            <div class="valor">${dados.descricao_situacao_cadastral || 'Não informado'}</div>
+                        </div>
+                    </div>
+                    <div class="campo">
+                        <div class="label">Razão Social</div>
+                        <div class="valor">${dados.razao_social || 'Não informado'}</div>
+                    </div>
+                    <div class="campo">
+                        <div class="label">Nome Fantasia</div>
+                        <div class="valor">${dados.nome_fantasia || 'Não informado'}</div>
+                    </div>
+                </div>
+
+                <div class="secao">
+                    <h3>📅 INFORMAÇÕES CADASTRAIS</h3>
+                    <div class="grid-2">
+                        <div class="campo">
+                            <div class="label">Abertura</div>
+                            <div class="valor">${dados.data_inicio_atividade ? new Date(dados.data_inicio_atividade).toLocaleDateString('pt-BR') : 'Não informado'}</div>
+                        </div>
+                        <div class="campo">
+                            <div class="label">Capital Social</div>
+                            <div class="valor">${dados.capital_social ? formatarCampoCNPJ(dados.capital_social, 'capitalSocial') : 'Não informado'}</div>
+                        </div>
+                        <div class="campo">
+                            <div class="label">Porte</div>
+                            <div class="valor">${porteDescricao}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="secao">
+                    <h3>📍 ENDEREÇO</h3>
+                    <div class="campo">
+                        <div class="valor">
+                            ${dados.logradouro || ''}, ${dados.numero || 'S/N'} ${dados.complemento || ''}<br>
+                            ${dados.bairro || ''} - ${cidadeNome}/${uf}<br>
+                            <strong>CEP:</strong> ${dados.cep ? formatarCampoCNPJ(dados.cep, 'cep') : 'Não informado'}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="secao">
+                    <h3>📞 CONTATO</h3>
+                    <div class="grid-2">
+                        <div class="campo">
+                            <div class="label">Telefone 1</div>
+                            <div class="valor">${telefone1}</div>
+                        </div>
+                        <div class="campo">
+                            <div class="label">Telefone 2</div>
+                            <div class="valor">${telefone2}</div>
+                        </div>
+                        <div class="campo">
+                            <div class="label">Email</div>
+                            <div class="valor">${email}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="secao">
+                    <h3>🏢 ATIVIDADE PRINCIPAL</h3>
+                    <div class="campo">
+                        <div class="label">CNAE</div>
+                        <div class="valor">${dados.cnae_fiscal || 'Não informado'}</div>
+                    </div>
+                    <div class="campo">
+                        <div class="label">Descrição</div>
+                        <div class="valor">${dados.cnae_fiscal_descricao || 'Não informado'}</div>
+                    </div>
+                </div>
+
+                
+                <div class="rodape">
+                    Sistema de Consulta CNPJ - Documento gerado em ${new Date().toLocaleString('pt-BR')}
+                </div>
+            </div>
+            <script>
+                window.onload = function() { window.print(); }
+            <\/script>
+        </body>
+        </html>
+    `;
+    
+    janelaImpressao.document.write(htmlCartao);
+    janelaImpressao.document.close();
 }
 
 // ========== FUNÇÃO PARA ALTERNAR ABAS ==========
@@ -165,55 +428,140 @@ cnpjInput.addEventListener('input', (e) => {
 });
 
 function criarHtmlDadosCNPJ(dados) {
-    const cidadeNome = dados.cidade?.nome || 'Não informado';
-    const uf = dados.uf || 'Não informado';
-    const porteDescricao = dados.porte?.descricao || 'Não informado';
-    const temSocios = dados.qsa && dados.qsa.length > 0;
+    // Armazena os dados globalmente para impressão
+    window.ultimoCnpjConsultado = dados;
+    
+    // Formatar datas
+    const dataAbertura = dados.data_inicio_atividade ? new Date(dados.data_inicio_atividade).toLocaleDateString('pt-BR') : 'Não informado';
+    const dataSituacao = dados.data_situacao_cadastral ? new Date(dados.data_situacao_cadastral).toLocaleDateString('pt-BR') : 'Não informado';
+    
+    // Telefones
+    let telefone1 = 'Não informado';
+    let telefone2 = 'Não informado';
+    
+    if (dados.ddd_telefone_1) {
+        telefone1 = formatarCampoCNPJ(dados.ddd_telefone_1, 'telefone');
+    }
+    
+    if (dados.ddd_telefone_2) {
+        telefone2 = formatarCampoCNPJ(dados.ddd_telefone_2, 'telefone');
+    }
+    
+    // Email (veio como null neste exemplo)
+    const email = dados.email || 'Não informado';
+    
+    // Formatar regime tributário
+    const regimeTributario = dados.regime_tributario || [];
+    const ultimoRegime = regimeTributario.length > 0 ? regimeTributario[regimeTributario.length - 1] : null;
     
     return `
         <div class="cnpj-info">
+            <!-- DADOS PRINCIPAIS -->
             <div class="cnpj-section">
-                <h4>📋 Dados Principais</h4>
+                <h4>📋 DADOS PRINCIPAIS</h4>
                 <p><strong>CNPJ:</strong> ${dados.cnpj || 'Não informado'}</p>
                 <p><strong>Razão Social:</strong> ${dados.razao_social || 'Não informado'}</p>
                 <p><strong>Nome Fantasia:</strong> ${dados.nome_fantasia || 'Não informado'}</p>
-                <p><strong>Situação:</strong> ${dados.descricao_situacao_cadastral || 'Não informado'}</p>
-                <p><strong>Abertura:</strong> ${dados.data_inicio_atividade ? new Date(dados.data_inicio_atividade).toLocaleDateString('pt-BR') : 'Não informado'}</p>
-                <p><strong>Capital:</strong> ${dados.capital_social ? formatarCampoCNPJ(dados.capital_social, 'capitalSocial') : 'Não informado'}</p>
-                <p><strong>Porte:</strong> ${porteDescricao}</p>
+                <p><strong>Natureza Jurídica:</strong> ${dados.natureza_juridica || 'Não informado'} (${dados.codigo_natureza_juridica || ''})</p>
+                <p><strong>Porte:</strong> ${dados.porte || 'Não informado'} (Código: ${dados.codigo_porte || ''})</p>
+                <p><strong>Capital Social:</strong> ${dados.capital_social ? formatarCampoCNPJ(dados.capital_social, 'capitalSocial') : 'Não informado'}</p>
             </div>
             
+            <!-- SITUAÇÃO CADASTRAL -->
             <div class="cnpj-section">
-                <h4>📍 Endereço</h4>
-                <p>${dados.logradouro || ''}, ${dados.numero || 'S/N'} ${dados.complemento || ''}</p>
-                <p>${dados.bairro || ''} - ${cidadeNome}/${uf}</p>
+                <h4>⚖️ SITUAÇÃO CADASTRAL</h4>
+                <p><strong>Situação:</strong> ${dados.descricao_situacao_cadastral || 'Não informado'} (Código: ${dados.situacao_cadastral || ''})</p>
+                <p><strong>Data da Situação:</strong> ${dataSituacao}</p>
+                <p><strong>Motivo:</strong> ${dados.descricao_motivo_situacao_cadastral || 'Não informado'} (Código: ${dados.motivo_situacao_cadastral || ''})</p>
+                <p><strong>Situação Especial:</strong> ${dados.situacao_especial || 'Não informado'}</p>
+                <p><strong>Data Situação Especial:</strong> ${dados.data_situacao_especial ? new Date(dados.data_situacao_especial).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+            </div>
+            
+            <!-- ENDEREÇO -->
+            <div class="cnpj-section">
+                <h4>📍 ENDEREÇO</h4>
+                <p><strong>Tipo Logradouro:</strong> ${dados.descricao_tipo_de_logradouro || ''}</p>
+                <p><strong>Logradouro:</strong> ${dados.logradouro || ''}, ${dados.numero || 'S/N'}</p>
+                <p><strong>Complemento:</strong> ${dados.complemento || 'Não informado'}</p>
+                <p><strong>Bairro:</strong> ${dados.bairro || 'Não informado'}</p>
+                <p><strong>Município:</strong> ${dados.municipio || 'Não informado'} (IBGE: ${dados.codigo_municipio_ibge || dados.codigo_municipio || ''})</p>
+                <p><strong>UF:</strong> ${dados.uf || 'Não informado'}</p>
                 <p><strong>CEP:</strong> ${dados.cep ? formatarCampoCNPJ(dados.cep, 'cep') : 'Não informado'}</p>
+                <p><strong>País:</strong> ${dados.pais || 'Brasil'}</p>
             </div>
             
+            <!-- CONTATO -->
             <div class="cnpj-section">
-                <h4>📞 Contato</h4>
-                <p><strong>Telefone 1:</strong> ${dados.telefone1 ? formatarCampoCNPJ(dados.telefone1, 'telefone') : 'Não informado'}</p>
-                <p><strong>Telefone 2:</strong> ${dados.telefone2 ? formatarCampoCNPJ(dados.telefone2, 'telefone') : 'Não informado'}</p>
-                <p><strong>Email:</strong> ${dados.email || 'Não informado'}</p>
+                <h4>📞 CONTATO</h4>
+                <p><strong>Telefone 1:</strong> ${telefone1}</p>
+                <p><strong>Telefone 2:</strong> ${telefone2}</p>
+                <p><strong>Fax:</strong> ${dados.ddd_fax ? formatarCampoCNPJ(dados.ddd_fax, 'telefone') : 'Não informado'}</p>
+                <p><strong>Email:</strong> ${email}</p>
             </div>
             
+            <!-- ATIVIDADES ECONÔMICAS -->
             <div class="cnpj-section">
-                <h4>🏢 Atividade Principal</h4>
-                <p><strong>CNAE:</strong> ${dados.cnae_fiscal || 'Não informado'}</p>
-                <p><strong>Descrição:</strong> ${dados.cnae_fiscal_descricao || 'Não informado'}</p>
+                <h4>🏭 ATIVIDADES ECONÔMICAS</h4>
+                <p><strong>CNAE Fiscal:</strong> ${dados.cnae_fiscal || 'Não informado'}</p>
+                <p><strong>Descrição CNAE:</strong> ${dados.cnae_fiscal_descricao || 'Não informado'}</p>
+                
+                ${dados.cnaes_secundarios && dados.cnaes_secundarios.length > 0 && dados.cnaes_secundarios[0].codigo !== 0 ? `
+                    <p><strong>CNAEs Secundários:</strong></p>
+                    <ul style="margin-top: 5px;">
+                        ${dados.cnaes_secundarios.map(cnae => `
+                            <li>Código: ${cnae.codigo} - ${cnae.descricao}</li>
+                        `).join('')}
+                    </ul>
+                ` : '<p><strong>CNAEs Secundários:</strong> Não informado</p>'}
             </div>
             
-            ${temSocios ? `
-                <div class="cnpj-section">
-                    <h4>👥 Quadro Societário</h4>
-                    ${dados.qsa.map(socio => `
-                        <div class="socio-item">
-                            <p><strong>${socio.nome || 'Nome não informado'}</strong></p>
-                            <p>${socio.qualificacao || ''}</p>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : ''}
+            <!-- REGIME TRIBUTÁRIO -->
+            <div class="cnpj-section">
+                <h4>💰 REGIME TRIBUTÁRIO</h4>
+                <p><strong>Opção pelo Simples:</strong> ${dados.opcao_pelo_simples ? 'Sim' : 'Não'}</p>
+                <p><strong>Data Opção Simples:</strong> ${dados.data_opcao_pelo_simples ? new Date(dados.data_opcao_pelo_simples).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                <p><strong>Data Exclusão Simples:</strong> ${dados.data_exclusao_do_simples ? new Date(dados.data_exclusao_do_simples).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                
+                <p><strong>Opção pelo MEI:</strong> ${dados.opcao_pelo_mei ? 'Sim' : 'Não'}</p>
+                <p><strong>Data Opção MEI:</strong> ${dados.data_opcao_pelo_mei ? new Date(dados.data_opcao_pelo_mei).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                <p><strong>Data Exclusão MEI:</strong> ${dados.data_exclusao_do_mei ? new Date(dados.data_exclusao_do_mei).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                
+                ${ultimoRegime ? `
+                    <p><strong>Último Regime:</strong> ${ultimoRegime.forma_de_tributacao} (${ultimoRegime.ano})</p>
+                ` : ''}
+            </div>
+            
+            <!-- QUADRO SOCIETÁRIO -->
+            <div class="cnpj-section">
+                <h4>👥 QUADRO SOCIETÁRIO</h4>
+                ${dados.qsa && dados.qsa.length > 0 ? dados.qsa.map(socio => `
+                    <div class="socio-item">
+                        <p><strong>${socio.nome_socio || 'Nome não informado'}</strong></p>
+                        <p><strong>Qualificação:</strong> ${socio.qualificacao_socio || 'Não informado'} (Código: ${socio.codigo_qualificacao_socio || ''})</p>
+                        <p><strong>CPF/CNPJ:</strong> ${socio.cnpj_cpf_do_socio || 'Não informado'}</p>
+                        <p><strong>Data Entrada:</strong> ${socio.data_entrada_sociedade ? new Date(socio.data_entrada_sociedade).toLocaleDateString('pt-BR') : 'Não informado'}</p>
+                        <p><strong>Faixa Etária:</strong> ${socio.faixa_etaria || 'Não informado'}</p>
+                        <p><strong>Representante Legal:</strong> ${socio.nome_representante_legal || 'Não informado'} (CPF: ${socio.cpf_representante_legal || 'Não informado'})</p>
+                        <p><strong>Qualificação Representante:</strong> ${socio.qualificacao_representante_legal || 'Não informado'}</p>
+                    </div>
+                `).join('') : '<p>Não informado</p>'}
+            </div>
+            
+            <!-- INFORMAÇÕES DA MATRIZ/FILIAL -->
+            <div class="cnpj-section">
+                <h4>🏢 INFORMAÇÕES DA EMPRESA</h4>
+                <p><strong>Tipo:</strong> ${dados.descricao_identificador_matriz_filial || 'Não informado'} (Código: ${dados.identificador_matriz_filial || ''})</p>
+                <p><strong>Data de Abertura:</strong> ${dataAbertura}</p>
+                <p><strong>Ente Federativo:</strong> ${dados.ente_federativo_responsavel || 'Não informado'}</p>
+                <p><strong>Nome no Exterior:</strong> ${dados.nome_cidade_no_exterior || 'Não informado'}</p>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center; display: flex; gap: 10px; justify-content: center;">
+                <button onclick="imprimirCartaoCNPJ()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                    🖨️ Imprimir Cartão CNPJ
+                </button>
+                
+            </div>
         </div>
     `;
 }
