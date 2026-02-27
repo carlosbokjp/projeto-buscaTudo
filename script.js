@@ -43,14 +43,12 @@ function ncmTem8Digitos(codigo) {
 }
 
 // ========== FUNÇÃO PARA FORMATAR CAMPOS ==========
-
 function formatarCampoCNPJ(valor, tipo) {
     if (!valor || valor === 'null' || valor === 'undefined' || valor === '') return 'Não informado';
     valor = String(valor).trim();
     
     switch(tipo) {
         case 'telefone':
-            // Remove tudo que não é número
             const numeros = valor.replace(/\D/g, '');
             
             if (numeros.length === 10) {
@@ -65,7 +63,6 @@ function formatarCampoCNPJ(valor, tipo) {
             if (numeros.length === 9) {
                 return numeros.replace(/^(\d{5})(\d{4})$/, '$1-$2');
             }
-            // Se não conseguir formatar, retorna o valor original
             return valor;
             
         case 'cep':
@@ -92,13 +89,10 @@ function imprimirCartaoCNPJ() {
         return;
     }
 
-    // Formatar dados para impressão
     const cidadeNome = dados.cidade?.nome || 'Não informado';
     const uf = dados.uf || 'Não informado';
     const porteDescricao = dados.porte?.descricao || 'Não informado';
-    const temSocios = dados.qsa && dados.qsa.length > 0;
     
-    // Telefones
     let telefone1 = 'Não informado';
     let telefone2 = 'Não informado';
     
@@ -116,16 +110,13 @@ function imprimirCartaoCNPJ() {
         telefone2 = `(${dados.ddd_telefone_2}) ${dados.telefone_2}`;
     }
     
-    // Email
     let email = dados.email || 'Não informado';
     if (dados.email === null || dados.email === undefined || dados.email === '') {
         email = 'Não informado';
     }
 
-    // Criar janela de impressão
     const janelaImpressao = window.open('', '_blank');
     
-    // HTML do cartão
     const htmlCartao = `
         <!DOCTYPE html>
         <html>
@@ -310,7 +301,6 @@ function imprimirCartaoCNPJ() {
                     </div>
                 </div>
 
-                
                 <div class="rodape">
                     Sistema de Consulta CNPJ - Documento gerado em ${new Date().toLocaleString('pt-BR')}
                 </div>
@@ -379,12 +369,27 @@ buscaNcmInput.addEventListener('input', (e) => {
         return;
     }
 
-    const resultados = baseNCM.filter(item => 
-        ncmTem8Digitos(item.codigo) && 
-        (item.codigo.includes(termo) || item.descricao.toLowerCase().includes(termo))
-    ).slice(0, 50);
+    // Usar Map para garantir NCMs únicos
+    const resultadosMap = new Map();
+    
+    baseNCM.forEach(item => {
+        if (ncmTem8Digitos(item.codigo)) {
+            const codigoMatch = item.codigo.includes(termo);
+            const descMatch = item.descricao.toLowerCase().includes(termo);
+            
+            if (codigoMatch || descMatch) {
+                // Garantir que não adiciona códigos duplicados
+                if (!resultadosMap.has(item.codigo)) {
+                    resultadosMap.set(item.codigo, item);
+                }
+            }
+        }
+    });
 
-    statusNcm.innerText = `${resultados.length} resultados para "${termo}"`;
+    // Converter Map para array e limitar a 50 resultados
+    const resultados = Array.from(resultadosMap.values()).slice(0, 50);
+
+    statusNcm.innerText = `${resultados.length} resultados únicos para "${termo}"`;
 
     resultados.forEach(item => {
         const li = document.createElement('li');
@@ -428,14 +433,11 @@ cnpjInput.addEventListener('input', (e) => {
 });
 
 function criarHtmlDadosCNPJ(dados) {
-    // Armazena os dados globalmente para impressão
     window.ultimoCnpjConsultado = dados;
     
-    // Formatar datas
     const dataAbertura = dados.data_inicio_atividade ? new Date(dados.data_inicio_atividade).toLocaleDateString('pt-BR') : 'Não informado';
     const dataSituacao = dados.data_situacao_cadastral ? new Date(dados.data_situacao_cadastral).toLocaleDateString('pt-BR') : 'Não informado';
     
-    // Telefones
     let telefone1 = 'Não informado';
     let telefone2 = 'Não informado';
     
@@ -447,16 +449,13 @@ function criarHtmlDadosCNPJ(dados) {
         telefone2 = formatarCampoCNPJ(dados.ddd_telefone_2, 'telefone');
     }
     
-    // Email (veio como null neste exemplo)
     const email = dados.email || 'Não informado';
     
-    // Formatar regime tributário
     const regimeTributario = dados.regime_tributario || [];
     const ultimoRegime = regimeTributario.length > 0 ? regimeTributario[regimeTributario.length - 1] : null;
     
     return `
         <div class="cnpj-info">
-            <!-- DADOS PRINCIPAIS -->
             <div class="cnpj-section">
                 <h4>📋 DADOS PRINCIPAIS</h4>
                 <p><strong>CNPJ:</strong> ${dados.cnpj || 'Não informado'}</p>
@@ -467,7 +466,6 @@ function criarHtmlDadosCNPJ(dados) {
                 <p><strong>Capital Social:</strong> ${dados.capital_social ? formatarCampoCNPJ(dados.capital_social, 'capitalSocial') : 'Não informado'}</p>
             </div>
             
-            <!-- SITUAÇÃO CADASTRAL -->
             <div class="cnpj-section">
                 <h4>⚖️ SITUAÇÃO CADASTRAL</h4>
                 <p><strong>Situação:</strong> ${dados.descricao_situacao_cadastral || 'Não informado'} (Código: ${dados.situacao_cadastral || ''})</p>
@@ -477,7 +475,6 @@ function criarHtmlDadosCNPJ(dados) {
                 <p><strong>Data Situação Especial:</strong> ${dados.data_situacao_especial ? new Date(dados.data_situacao_especial).toLocaleDateString('pt-BR') : 'Não informado'}</p>
             </div>
             
-            <!-- ENDEREÇO -->
             <div class="cnpj-section">
                 <h4>📍 ENDEREÇO</h4>
                 <p><strong>Tipo Logradouro:</strong> ${dados.descricao_tipo_de_logradouro || ''}</p>
@@ -490,7 +487,6 @@ function criarHtmlDadosCNPJ(dados) {
                 <p><strong>País:</strong> ${dados.pais || 'Brasil'}</p>
             </div>
             
-            <!-- CONTATO -->
             <div class="cnpj-section">
                 <h4>📞 CONTATO</h4>
                 <p><strong>Telefone 1:</strong> ${telefone1}</p>
@@ -499,7 +495,6 @@ function criarHtmlDadosCNPJ(dados) {
                 <p><strong>Email:</strong> ${email}</p>
             </div>
             
-            <!-- ATIVIDADES ECONÔMICAS -->
             <div class="cnpj-section">
                 <h4>🏭 ATIVIDADES ECONÔMICAS</h4>
                 <p><strong>CNAE Fiscal:</strong> ${dados.cnae_fiscal || 'Não informado'}</p>
@@ -515,7 +510,6 @@ function criarHtmlDadosCNPJ(dados) {
                 ` : '<p><strong>CNAEs Secundários:</strong> Não informado</p>'}
             </div>
             
-            <!-- REGIME TRIBUTÁRIO -->
             <div class="cnpj-section">
                 <h4>💰 REGIME TRIBUTÁRIO</h4>
                 <p><strong>Opção pelo Simples:</strong> ${dados.opcao_pelo_simples ? 'Sim' : 'Não'}</p>
@@ -531,7 +525,6 @@ function criarHtmlDadosCNPJ(dados) {
                 ` : ''}
             </div>
             
-            <!-- QUADRO SOCIETÁRIO -->
             <div class="cnpj-section">
                 <h4>👥 QUADRO SOCIETÁRIO</h4>
                 ${dados.qsa && dados.qsa.length > 0 ? dados.qsa.map(socio => `
@@ -547,7 +540,6 @@ function criarHtmlDadosCNPJ(dados) {
                 `).join('') : '<p>Não informado</p>'}
             </div>
             
-            <!-- INFORMAÇÕES DA MATRIZ/FILIAL -->
             <div class="cnpj-section">
                 <h4>🏢 INFORMAÇÕES DA EMPRESA</h4>
                 <p><strong>Tipo:</strong> ${dados.descricao_identificador_matriz_filial || 'Não informado'} (Código: ${dados.identificador_matriz_filial || ''})</p>
@@ -560,7 +552,6 @@ function criarHtmlDadosCNPJ(dados) {
                 <button onclick="imprimirCartaoCNPJ()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px;">
                     🖨️ Imprimir Cartão CNPJ
                 </button>
-                
             </div>
         </div>
     `;
@@ -619,18 +610,41 @@ function lerCSV(file) {
         reader.onload = (event) => {
             const lines = event.target.result.split('\n');
             const produtos = [];
+            const produtosSet = new Set(); // Para controlar produtos únicos
+            const duplicatas = [];
             
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line) {
                     const fields = line.split(';');
-                    const nomeProduto = fields[0].trim();
+                    let nomeProduto = fields[0].trim();
+                    
+                    // Remove aspas se existirem
+                    nomeProduto = nomeProduto.replace(/^["']|["']$/g, '');
+                    
                     if (nomeProduto) {
-                        produtos.push({ nome: nomeProduto });
+                        const nomeLower = nomeProduto.toLowerCase();
+                        
+                        // Verifica se já existe
+                        if (!produtosSet.has(nomeLower)) {
+                            produtosSet.add(nomeLower);
+                            produtos.push({ 
+                                nome: nomeProduto,
+                                linha: i + 1 
+                            });
+                        } else {
+                            duplicatas.push(`Linha ${i + 1}: ${nomeProduto}`);
+                        }
                     }
                 }
             }
-            resolve(produtos);
+            
+            // Mostra aviso se houver duplicatas
+            if (duplicatas.length > 0) {
+                console.log('⚠️ Produtos duplicados ignorados:', duplicatas);
+            }
+            
+            resolve({ produtos, duplicatas: duplicatas.length });
         };
         
         reader.onerror = reject;
@@ -646,26 +660,40 @@ function buscarNCMProduto(nomeProduto) {
     const termo = nomeProduto.toLowerCase();
     const palavras = termo.split(' ').filter(p => p.length > 2);
     
+    // Usar Map para garantir resultados únicos por código NCM
+    const resultadosMap = new Map();
+    
     // Primeiro tenta busca exata
-    let resultados = baseNCM.filter(item => 
-        ncmTem8Digitos(item.codigo) && 
-        item.descricao.toLowerCase().includes(termo)
-    );
+    baseNCM.forEach(item => {
+        if (ncmTem8Digitos(item.codigo) && item.descricao.toLowerCase().includes(termo)) {
+            if (!resultadosMap.has(item.codigo)) {
+                resultadosMap.set(item.codigo, item);
+            }
+        }
+    });
     
     // Se não encontrar, tenta com palavras individuais
-    if (resultados.length === 0 && palavras.length > 0) {
-        resultados = baseNCM.filter(item => {
-            if (!ncmTem8Digitos(item.codigo)) return false;
-            const descLower = item.descricao.toLowerCase();
-            return palavras.some(palavra => descLower.includes(palavra));
+    if (resultadosMap.size === 0 && palavras.length > 0) {
+        baseNCM.forEach(item => {
+            if (ncmTem8Digitos(item.codigo)) {
+                const descLower = item.descricao.toLowerCase();
+                if (palavras.some(palavra => descLower.includes(palavra))) {
+                    if (!resultadosMap.has(item.codigo)) {
+                        resultadosMap.set(item.codigo, item);
+                    }
+                }
+            }
         });
     }
     
-    if (resultados.length > 0) {
+    // Pega o primeiro resultado único
+    const primeiroResultado = Array.from(resultadosMap.values())[0];
+    
+    if (primeiroResultado) {
         return {
             encontrado: true,
-            ncm: resultados[0].codigo,
-            descricao: resultados[0].descricao
+            ncm: primeiroResultado.codigo,
+            descricao: primeiroResultado.descricao
         };
     }
     
@@ -740,7 +768,7 @@ btnImportarCSV.addEventListener('click', async () => {
     statusImportacao.style.color = "#2563eb";
     
     try {
-        const produtos = await lerCSV(file);
+        const { produtos, duplicatas } = await lerCSV(file);
         
         if (produtos.length === 0) {
             statusImportacao.innerText = "❌ Nenhum produto encontrado no arquivo!";
@@ -748,7 +776,11 @@ btnImportarCSV.addEventListener('click', async () => {
             return;
         }
         
-        statusImportacao.innerText = `🔍 Buscando NCMs para ${produtos.length} produtos...`;
+        let mensagem = `🔍 Buscando NCMs para ${produtos.length} produtos únicos...`;
+        if (duplicatas > 0) {
+            mensagem = `🔍 Buscando NCMs para ${produtos.length} produtos únicos (${duplicatas} duplicatas ignoradas)...`;
+        }
+        statusImportacao.innerText = mensagem;
         
         const resultados = produtos.map(produto => ({
             ...produto,
@@ -758,7 +790,11 @@ btnImportarCSV.addEventListener('click', async () => {
         exibirTabelaResultados(resultados);
         
         const encontrados = resultados.filter(r => r.encontrado).length;
-        statusImportacao.innerText = `✅ Processamento concluído! ${encontrados} de ${resultados.length} produtos encontrados.`;
+        let msgFinal = `✅ Processamento concluído! ${encontrados} de ${resultados.length} produtos encontrados.`;
+        if (duplicatas > 0) {
+            msgFinal += ` (${duplicatas} duplicatas ignoradas)`;
+        }
+        statusImportacao.innerText = msgFinal;
         statusImportacao.style.color = "green";
         
     } catch (error) {
@@ -815,10 +851,16 @@ if (btnExportarCSV) {
 }
 
 // ========== FUNÇÕES PARA XML NFE ==========
-// Função para extrair produtos do XML
-function extrairProdutosXML(xmlString) {
+// Função para extrair produtos do XML com verificação de duplicatas
+function extrairProdutosXML(xmlString, nomeArquivo) {
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+    
+    // Verifica se há erro de parsing
+    const parseError = xmlDoc.getElementsByTagName("parsererror");
+    if (parseError.length > 0) {
+        throw new Error("Erro ao fazer parse do XML");
+    }
     
     // Namespace da NFe
     const ns = {
@@ -827,7 +869,14 @@ function extrairProdutosXML(xmlString) {
     
     // Função para obter valor de tag com namespace
     function getTagValue(parent, tagName) {
-        const element = parent.getElementsByTagNameNS(ns.nfe, tagName)[0];
+        // Tenta com namespace
+        let element = parent.getElementsByTagNameNS(ns.nfe, tagName)[0];
+        
+        // Se não encontrou, tenta sem namespace
+        if (!element) {
+            element = parent.getElementsByTagName(tagName)[0];
+        }
+        
         return element ? element.textContent : '';
     }
     
@@ -845,10 +894,17 @@ function extrairProdutosXML(xmlString) {
     
     // Encontrar todos os produtos (det)
     const dets = infNFe.getElementsByTagNameNS(ns.nfe, "det");
-    const listaProdutos = [];
     
     // Se não encontrou com namespace, tenta sem namespace
     const produtos = dets.length > 0 ? dets : infNFe.getElementsByTagName("det");
+    
+    if (produtos.length === 0) {
+        throw new Error("Nenhum produto encontrado no XML");
+    }
+    
+    // Usar Map para garantir produtos únicos (por código + nome + NCM)
+    const produtosMap = new Map();
+    const duplicatas = [];
     
     for (let i = 0; i < produtos.length; i++) {
         // Tenta encontrar prod com namespace
@@ -870,14 +926,28 @@ function extrairProdutosXML(xmlString) {
                 valorUnitario: getTagValue(prod, "vUnCom"),
                 valorTotal: getTagValue(prod, "vProd"),
                 ean: getTagValue(prod, "cEAN"),
-                eanTrib: getTagValue(prod, "cEANTrib")
+                eanTrib: getTagValue(prod, "cEANTrib"),
+                arquivoOrigem: nomeArquivo
             };
             
-            listaProdutos.push(produto);
+            // Criar chave única (código + nome + NCM)
+            const chaveUnica = `${produto.codigo}|${produto.nome}|${produto.ncm}`;
+            
+            // Verificar se produto já existe no Map
+            if (!produtosMap.has(chaveUnica)) {
+                produtosMap.set(chaveUnica, produto);
+            } else {
+                duplicatas.push(`Produto duplicado ignorado: ${produto.codigo} - ${produto.nome}`);
+            }
         }
     }
     
-    return listaProdutos;
+    // Log de duplicatas encontradas
+    if (duplicatas.length > 0) {
+        console.log(`⚠️ Encontradas ${duplicatas.length} duplicatas no arquivo ${nomeArquivo}:`, duplicatas);
+    }
+    
+    return Array.from(produtosMap.values());
 }
 
 // Função para exibir tabela de produtos do XML
@@ -886,18 +956,18 @@ function exibirTabelaProdutosXml(produtos) {
     
     let html = `
         <div style="margin-bottom: 15px; padding: 10px; background: #f0f4ff; border-radius: 8px;">
-            <strong>Total de produtos:</strong> ${produtos.length}
+            <strong>Total de produtos únicos:</strong> ${produtos.length}
         </div>
         <div style="overflow-x: auto;">
             <table style="width:100%; border-collapse: collapse; min-width: 1200px;">
                 <thead>
                     <tr style="background: #2563eb; color: white;">
+                        <th style="padding: 12px; text-align: left;">Arquivo</th>
                         <th style="padding: 12px; text-align: left;">Código</th>
                         <th style="padding: 12px; text-align: left;">Produto</th>
                         <th style="padding: 12px; text-align: left;">NCM</th>
                         <th style="padding: 12px; text-align: left;">CFOP</th>
-                        <th style="padding: 12px; text-align: left;">GTIN Comercial (cEAN)</th>
-                        <th style="padding: 12px; text-align: left;">GTIN Tributável (cEANTrib)</th>
+                        <th style="padding: 12px; text-align: left;">GTIN</th>
                         <th style="padding: 12px; text-align: right;">Qtd</th>
                         <th style="padding: 12px; text-align: left;">UN</th>
                         <th style="padding: 12px; text-align: right;">Valor Unit.</th>
@@ -908,19 +978,18 @@ function exibirTabelaProdutosXml(produtos) {
     `;
     
     produtos.forEach(p => {
-        // Formatar valores para exibição
         const quantidade = p.quantidade ? parseFloat(p.quantidade).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
         const valorUnit = p.valorUnitario ? parseFloat(p.valorUnitario).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
         const valorTotal = p.valorTotal ? parseFloat(p.valorTotal).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0,00';
         
         html += `
             <tr style="border-bottom: 1px solid #e5e7eb;">
+                <td style="padding: 10px; font-size: 12px;">${p.arquivoOrigem || '---'}</td>
                 <td style="padding: 10px;">${p.codigo || '---'}</td>
                 <td style="padding: 10px;">${p.nome || '---'}</td>
                 <td style="padding: 10px; font-weight: bold; color: #2563eb;">${p.ncm || '---'}</td>
                 <td style="padding: 10px;">${p.cfop || '---'}</td>
                 <td style="padding: 10px; font-family: monospace;">${p.ean || '---'}</td>
-                <td style="padding: 10px; font-family: monospace; color: #f59e0b;">${p.eanTrib || '---'}</td>
                 <td style="padding: 10px; text-align: right;">${quantidade}</td>
                 <td style="padding: 10px;">${p.unidade || '---'}</td>
                 <td style="padding: 10px; text-align: right;">R$ ${valorUnit}</td>
@@ -953,20 +1022,30 @@ btnProcessarXml.addEventListener('click', async () => {
     
     const todosProdutos = [];
     const erros = [];
+    let totalDuplicatas = 0;
     
     try {
         for (let i = 0; i < xmlFileInput.files.length; i++) {
             const file = xmlFileInput.files[i];
             try {
                 const text = await file.text();
-                const produtos = extrairProdutosXML(text);
+                const produtos = extrairProdutosXML(text, file.name);
                 
-                // Adiciona informação de qual arquivo veio cada produto
-                produtos.forEach(p => {
-                    p.arquivoOrigem = file.name;
-                });
+                // Verificar duplicatas entre diferentes arquivos
+                for (const produto of produtos) {
+                    const chaveUnica = `${produto.codigo}|${produto.nome}|${produto.ncm}`;
+                    const existe = todosProdutos.some(p => 
+                        `${p.codigo}|${p.nome}|${p.ncm}` === chaveUnica
+                    );
+                    
+                    if (!existe) {
+                        todosProdutos.push(produto);
+                    } else {
+                        totalDuplicatas++;
+                        console.log(`⚠️ Produto duplicado entre arquivos ignorado: ${produto.codigo} - ${produto.nome}`);
+                    }
+                }
                 
-                todosProdutos.push(...produtos);
             } catch (e) {
                 erros.push(`${file.name}: ${e.message}`);
             }
@@ -980,7 +1059,10 @@ btnProcessarXml.addEventListener('click', async () => {
         
         exibirTabelaProdutosXml(todosProdutos);
         
-        let mensagem = `✅ Processamento concluído! ${todosProdutos.length} produtos encontrados.`;
+        let mensagem = `✅ Processamento concluído! ${todosProdutos.length} produtos únicos encontrados.`;
+        if (totalDuplicatas > 0) {
+            mensagem += ` (${totalDuplicatas} duplicatas ignoradas)`;
+        }
         if (erros.length > 0) {
             mensagem += ` ⚠️ ${erros.length} arquivo(s) com erro.`;
         }
@@ -1008,8 +1090,7 @@ function exportarProdutosXmlCSV() {
         'Produto',
         'NCM',
         'CFOP',
-        'GTIN Comercial (cEAN)',
-        'GTIN Tributável (cEANTrib)',
+        'GTIN',
         'Quantidade',
         'Unidade',
         'Valor Unitário',
@@ -1023,7 +1104,6 @@ function exportarProdutosXmlCSV() {
         p.ncm || '',
         p.cfop || '',
         p.ean || '',
-        p.eanTrib || '',
         p.quantidade ? parseFloat(p.quantidade).toFixed(2).replace('.', ',') : '0,00',
         p.unidade || '',
         p.valorUnitario ? parseFloat(p.valorUnitario).toFixed(2).replace('.', ',') : '0,00',
