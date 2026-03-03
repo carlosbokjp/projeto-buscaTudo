@@ -335,6 +335,9 @@ window.mostrarAba = function(nomeAba) {
     } else if (nomeAba === 'xml') {
         document.querySelectorAll('.tab-button')[3].classList.add('active');
         document.getElementById('abaXml').classList.add('active');
+    } else if (nomeAba === 'senha') {
+        document.querySelectorAll('.tab-button')[4].classList.add('active');
+        document.getElementById('abaSenha').classList.add('active');
     }
 };
 
@@ -1195,3 +1198,19 @@ window.addEventListener('load', () => {
     // Sincroniza a base automaticamente
     setTimeout(() => btnSincronizar.click(), 500);
 });
+
+function buscarSenha() {
+    const data = new Date();
+    const senha = data.getFullYear() - data.getDate() - data.getHours();
+    
+    const inputSenha = document.getElementById('senhaInput');
+    inputSenha.value = senha;
+    
+    // Efeito de destaque temporário
+    inputSenha.style.transform = 'scale(1.1)';
+    setTimeout(() => {
+        inputSenha.style.transform = 'scale(1)';
+    }, 200);
+}
+
+document.getElementById('btnBuscarSenha').addEventListener('click', buscarSenha);
