@@ -619,3 +619,41 @@ mark {
     margin-bottom: 3px;
     color: #4b5563;
 }
+
+
+
+#senhaInput {
+    font-weight: bold;
+    font-size: 32px;           /* Tamanho grande */
+    text-align: center;
+    color: #007bff;
+    padding: 15px;
+    border: 3px solid #007bff;
+    border-radius: 10px;
+    width: 150px;
+    margin-right: 15px;
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+#senhaInput:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 10px rgba(0,123,255,0.5);
+}
+
+#btnBuscarSenha {
+    font-size: 18px;
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#btnBuscarSenha:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
