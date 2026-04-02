@@ -1203,6 +1203,385 @@ cnpjInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') buscarCNPJ();
 });
 
+// ========== TRATAMENTO DE ENCODING E CARACTERES ESPECIAIS ==========
+
+/**
+ * Detecta e corrige problemas de encoding em textos
+ * @param {string} texto - Texto com possíveis problemas de encoding
+ * @returns {string} - Texto corrigido
+ */
+function corrigirEncoding(texto) {
+    if (!texto || typeof texto !== 'string') return texto;
+    
+    // Mapeamento de caracteres comuns corrompidos (Windows-1252 -> UTF-8)
+    const mapaCorrecao = {
+        // Acentuação comum corrompida
+        'Ã¡': 'á', 'Ã¢': 'â', 'Ã£': 'ã', 'Ã¤': 'ä', 'Ã ': 'à',
+        'Ã©': 'é', 'Ãª': 'ê', 'Ã«': 'ë',
+        'Ã­': 'í', 'Ã®': 'î', 'Ã¯': 'ï',
+        'Ã³': 'ó', 'Ã´': 'ô', 'Ãµ': 'õ', 'Ã¶': 'ö',
+        'Ãº': 'ú', 'Ã»': 'û', 'Ã¼': 'ü',
+        'Ã§': 'ç', 'Ãƒ': 'ã', 'Ã‰': 'é', 'Ã§Ã£o': 'ção',
+        
+        // Caracteres especiais corrompidos
+        'Â°': '°', 'Âº': 'º', 'Âª': 'ª', 'Â£': '£',
+        'â‚¬': '€', 'â„¢': '™', 'Â®': '®', 'Â©': '©',
+        'ÃŸ': 'ß', 'Ã†': 'Æ', 'Ã˜': 'Ø',
+        
+        // Espaços e pontuação
+        'Ã‚': 'Â', 'ÃƒÂ': 'ã', 'Ã¢â‚¬â€œ': '—',
+        'Ã¢â‚¬â„¢': "'", 'Ã¢â‚¬Ëœ': "'", 'Ã¢â‚¬Å“': '"',
+        'Ã¢â‚¬Â': '"', 'Ã¢â€šÂ¬': '€',
+        
+        // Casos específicos do seu arquivo
+        'algod?o': 'algodão',
+        'cora?': 'coração',
+        '?': 'ã', // Corrige interrogação mal formatada como "ã" em alguns casos
+    };
+    
+    // Aplica correções específicas
+    let textoCorrigido = texto;
+    for (const [corrompido, corrigido] of Object.entries(mapaCorrecao)) {
+        textoCorrigido = textoCorrigido.replace(new RegExp(corrompido, 'g'), corrigido);
+    }
+    
+    // Tenta corrigir padrões comuns de double-encoding
+    try {
+        // Se parece ser UTF-8 duplicado, tenta decodificar
+        if (textoCorrigido.includes('Ã')) {
+            // Converte para bytes e tenta redecodificar
+            const bytes = [];
+            for (let i = 0; i < textoCorrigido.length; i++) {
+                const code = textoCorrigido.charCodeAt(i);
+                if (code > 127 && code < 256) {
+                    bytes.push(code);
+                }
+            }
+            
+            if (bytes.length > 0) {
+                const decoder = new TextDecoder('utf-8');
+                const decoded = decoder.decode(new Uint8Array(bytes));
+                if (decoded && !decoded.includes('�')) {
+                    textoCorrigido = decoded;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Erro ao tentar corrigir double-encoding:', e);
+    }
+    
+    return textoCorrigido;
+}
+
+/**
+ * Normaliza caracteres especiais (opcional - para buscas mais flexíveis)
+ * @param {string} texto - Texto para normalizar
+ * @returns {string} - Texto sem acentos e em minúsculo
+ */
+function normalizarTexto(texto) {
+    if (!texto || typeof texto !== 'string') return texto;
+    
+    // Primeiro corrige encoding se necessário
+    let normalizado = corrigirEncoding(texto);
+    
+    // Remove acentos
+    normalizado = normalizado.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    
+    // Converte para minúsculo
+    normalizado = normalizado.toLowerCase();
+    
+    return normalizado;
+}
+
+/**
+ * Limpa e valida string, removendo caracteres inválidos
+ * @param {string} texto - Texto para limpar
+ * @returns {string} - Texto limpo
+ */
+function limparString(texto) {
+    if (!texto || typeof texto !== 'string') return '';
+    
+    // Remove caracteres de controle
+    let limpo = texto.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    // Remove BOM (Byte Order Mark)
+    limpo = limpo.replace(/^\uFEFF/, '');
+    
+    // Remove caracteres nulos
+    limpo = limpo.replace(/\0/g, '');
+    
+    // Corrige encoding
+    limpo = corrigirEncoding(limpo);
+    
+    return limpo.trim();
+}
+
+/**
+ * Detecta o encoding de um texto/base64
+ * @param {string|ArrayBuffer} dados - Dados para detectar encoding
+ * @returns {string} - Encoding detectado
+ */
+function detectarEncoding(dados) {
+    if (!dados) return 'UTF-8';
+    
+    // Converte para string se necessário
+    let texto = typeof dados === 'string' ? dados : new TextDecoder().decode(dados);
+    
+    // Verifica padrões comuns de encoding errado
+    if (texto.includes('Ã') && (texto.includes('§') || texto.includes('£'))) {
+        return 'WINDOWS-1252';
+    }
+    
+    if (texto.includes('Ã') && texto.includes('©')) {
+        return 'ISO-8859-1';
+    }
+    
+    if (texto.includes('�')) {
+        return 'BROKEN';
+    }
+    
+    return 'UTF-8';
+}
+
+/**
+ * Lê CSV com suporte a múltiplos encodings
+ * @param {File} file - Arquivo CSV
+ * @returns {Promise<Array>} - Array de produtos
+ */
+async function lerCSVComEncoding(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = (event) => {
+            let content = event.target.result;
+            let produtos = [];
+            const produtosSet = new Set();
+            const duplicatas = [];
+            
+            // Detecta e tenta corrigir encoding
+            const encoding = detectarEncoding(content);
+            
+            if (encoding === 'BROKEN' || content.includes('�')) {
+                // Tenta ler o arquivo original em diferentes encodings
+                const originalBytes = event.target.result;
+                const byteArray = new Uint8Array(originalBytes);
+                
+                // Tenta diferentes decodificadores
+                const encodings = ['utf-8', 'windows-1252', 'iso-8859-1'];
+                let melhorConteudo = null;
+                let menosCaracteresRuins = Infinity;
+                
+                for (const enc of encodings) {
+                    try {
+                        const decoder = new TextDecoder(enc);
+                        const decodificado = decoder.decode(byteArray);
+                        const charsRuins = (decodificado.match(/[�\x00-\x08\x0B\x0C\x0E-\x1F]/g) || []).length;
+                        
+                        if (charsRuins < menosCaracteresRuins) {
+                            menosCaracteresRuins = charsRuins;
+                            melhorConteudo = decodificado;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                
+                if (melhorConteudo) {
+                    content = melhorConteudo;
+                }
+            }
+            
+            // Divide em linhas
+            const lines = content.split(/\r?\n/);
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+                
+                // Tenta diferentes separadores
+                let fields;
+                if (line.includes(';')) {
+                    fields = line.split(';');
+                } else if (line.includes(',')) {
+                    fields = line.split(',');
+                } else if (line.includes('\t')) {
+                    fields = line.split('\t');
+                } else {
+                    fields = [line];
+                }
+                
+                let nomeProduto = fields[0];
+                
+                // Limpa e corrige o nome do produto
+                nomeProduto = limparString(nomeProduto);
+                
+                // Remove aspas se existirem
+                nomeProduto = nomeProduto.replace(/^["']|["']$/g, '');
+                
+                // Corrige problemas específicos de encoding
+                nomeProduto = corrigirEncoding(nomeProduto);
+                
+                if (nomeProduto && nomeProduto !== '') {
+                    const nomeLower = normalizarTexto(nomeProduto);
+                    
+                    if (!produtosSet.has(nomeLower)) {
+                        produtosSet.add(nomeLower);
+                        produtos.push({ 
+                            nome: nomeProduto,
+                            nomeNormalizado: nomeLower,
+                            linha: i + 1 
+                        });
+                    } else {
+                        duplicatas.push(`Linha ${i + 1}: ${nomeProduto}`);
+                    }
+                }
+            }
+            
+            resolve({ produtos, duplicatas: duplicatas.length });
+        };
+        
+        reader.onerror = reject;
+        
+        // Tenta ler como texto primeiro
+        try {
+            reader.readAsText(file, 'UTF-8');
+        } catch (e) {
+            // Se falhar, tenta como ArrayBuffer para detectar encoding
+            reader.readAsArrayBuffer(file);
+        }
+    });
+}
+
+// ========== FUNÇÃO DE BUSCA MELHORADA ==========
+function buscarNCMProdutoMelhorado(nomeProduto) {
+    if (!baseNCM || baseNCM.length === 0) {
+        return { encontrado: false, ncm: null, descricao: null };
+    }
+    
+    // Corrige encoding do produto
+    const produtoCorrigido = corrigirEncoding(nomeProduto);
+    const termo = produtoCorrigido.toLowerCase();
+    const termoNormalizado = normalizarTexto(produtoCorrigido);
+    
+    // Palavras-chave do produto (remove palavras comuns)
+    const palavrasChave = termoNormalizado
+        .split(/\s+/)
+        .filter(p => p.length > 2 && !['com', 'para', 'dos', 'das', 'de', 'da', 'do', 'e', 'a', 'o'].includes(p));
+    
+    // Usar Map para garantir resultados únicos
+    const resultadosMap = new Map();
+    
+    // Busca exata (com e sem normalização)
+    baseNCM.forEach(item => {
+        if (ncmTem8Digitos(item.codigo)) {
+            const descNormalizada = normalizarTexto(item.descricao);
+            const descOriginal = item.descricao.toLowerCase();
+            
+            // Busca exata normalizada
+            if (descNormalizada.includes(termoNormalizado)) {
+                if (!resultadosMap.has(item.codigo)) {
+                    resultadosMap.set(item.codigo, item);
+                }
+            }
+            // Busca exata original (com encoding corrigido)
+            else if (descOriginal.includes(termo)) {
+                if (!resultadosMap.has(item.codigo)) {
+                    resultadosMap.set(item.codigo, item);
+                }
+            }
+        }
+    });
+    
+    // Se não encontrar, busca por palavras-chave
+    if (resultadosMap.size === 0 && palavrasChave.length > 0) {
+        baseNCM.forEach(item => {
+            if (ncmTem8Digitos(item.codigo)) {
+                const descNormalizada = normalizarTexto(item.descricao);
+                const matchCount = palavrasChave.filter(palavra => descNormalizada.includes(palavra)).length;
+                
+                // Se pelo menos 50% das palavras-chave encontradas
+                if (matchCount >= palavrasChave.length * 0.5) {
+                    if (!resultadosMap.has(item.codigo)) {
+                        resultadosMap.set(item.codigo, item);
+                    }
+                }
+            }
+        });
+    }
+    
+    // Pega o melhor resultado (primeiro)
+    const melhorResultado = Array.from(resultadosMap.values())[0];
+    
+    if (melhorResultado) {
+        return {
+            encontrado: true,
+            ncm: melhorResultado.codigo,
+            descricao: melhorResultado.descricao,
+            nomeOriginal: nomeProduto,
+            nomeCorrigido: produtoCorrigido
+        };
+    }
+    
+    return { 
+        encontrado: false, 
+        ncm: null, 
+        descricao: null,
+        nomeOriginal: nomeProduto,
+        nomeCorrigido: produtoCorrigido
+    };
+}
+
+// ========== SOBRESCREVER A FUNÇÃO DE LEITURA CSV ORIGINAL ==========
+// Substitui a função lerCSV original pela versão com encoding
+const lerCSVOriginal = window.lerCSV;
+window.lerCSV = lerCSVComEncoding;
+
+// ========== FUNÇÃO PARA CORRIGIR RESULTADOS EXISTENTES ==========
+function corrigirResultadosExistentes() {
+    if (!window.ultimosResultados || window.ultimosResultados.length === 0) {
+        alert('Nenhum resultado para corrigir!');
+        return;
+    }
+    
+    const resultadosCorrigidos = window.ultimosResultados.map(r => ({
+        ...r,
+        nome: corrigirEncoding(r.nome),
+        descricao: r.descricao ? corrigirEncoding(r.descricao) : r.descricao
+    }));
+    
+    exibirTabelaResultados(resultadosCorrigidos);
+    window.ultimosResultados = resultadosCorrigidos;
+    
+    statusImportacao.innerText = "✅ Resultados corrigidos!";
+    statusImportacao.style.color = "green";
+}
+
+// ========== ADICIONAR BOTÃO DE CORREÇÃO ==========
+// Adicionar botão na interface de importação
+function adicionarBotaoCorrecao() {
+    const container = document.querySelector('#abaImportar .import-section');
+    if (container && !document.getElementById('btnCorrigirResultados')) {
+        const btnCorrigir = document.createElement('button');
+        btnCorrigir.id = 'btnCorrigirResultados';
+        btnCorrigir.innerHTML = '🔧 Corrigir Caracteres dos Resultados';
+        btnCorrigir.style.marginLeft = '10px';
+        btnCorrigir.style.background = '#f59e0b';
+        btnCorrigir.onclick = corrigirResultadosExistentes;
+        
+        const btnExportar = document.getElementById('btnExportarCSV');
+        if (btnExportar) {
+            btnExportar.parentNode.insertBefore(btnCorrigir, btnExportar.nextSibling);
+        }
+    }
+}
+
+// Executar após carregar a página
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', adicionarBotaoCorrecao);
+} else {
+    adicionarBotaoCorrecao();
+}
+
 // ========== FUNÇÕES DE IMPORTAÇÃO CSV ==========
 function lerCSV(file) {
     return new Promise((resolve, reject) => {
